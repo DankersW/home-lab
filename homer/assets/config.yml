@@ -1,0 +1,21 @@
+title: "Dankers Lab"
+subtitle: "Home lab dashboard"
+logo: "https://raw.githubusercontent.com/bastienwirtz/homer/main/public/logo.png"
+
+links: []
+
+services:
+  - name: "Documents"
+    icon: "fas fa-file-alt"
+    items:
+      - name: "Receipts (Paperless)"
+        #logo: "assets/tools/paperless.png" # put logo here in future icon here
+        subtitle: "Document Management"
+        tag: "Office"
+        #url: "http://REAL_IP_IP:8000" -> 
+        url: "http://localhost:8000"
+  - name: "Media"
+    items:
+      - name: "jellyfin"
+      - name: "rsfeed"
+

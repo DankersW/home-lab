@@ -1,0 +1,12 @@
+.env
+secrets/
+env/
+
+authelia/config/db.sqlite3
+
+paperless/consume/
+paperless/export/
+paperless/data/
+paperless/media/
+
+pgdata

@@ -1,0 +1,74 @@
+services:
+
+  paperless_redis:
+    image: redis:7
+    container_name: paperless_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  paperless_db:
+    image: postgres:15
+    container_name: paperless_db
+    restart: unless-stopped
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    secrets:
+      - db_password
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+
+  paperless_app:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless_app
+    restart: unless-stopped
+    depends_on:
+      - paperless_db  
+      - paperless_redis 
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./paperless/data:/usr/src/paperless/data
+      - ./paperless/media:/usr/src/paperless/media
+      - ./paperless/export:/usr/src/paperless/export
+      - ./paperless/consume:/usr/src/paperless/consume
+    secrets:
+      - db_password
+      - paperless_secret_key
+    environment:
+      PAPERLESS_REDIS: redis://paperless_redis:6379
+      PAPERLESS_DBHOST: paperless_db
+      PAPERLESS_DBUSER: paperless
+      PAPERLESS_DBPASS_FILE: /run/secrets/db_password
+      PAPERLESS_SECRET_KEY_FILE: /run/secrets/paperless_secret_key
+      PAPERLESS_URL: http://localhost:8000
+      PAPERLESS_TIME_ZONE: Europe/Stockholm
+      PAPERLESS_OCR_LANGUAGE: eng
+
+  homer:
+    image: b4bz/homer
+    container_name: homer_dashboard
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./homer/assets:/www/assets
+    environment:
+      - UID=1000
+      - GID=1000
+
+volumes:
+  redis_data:
+
+
+secrets:
+  db_password:
+    file: ./secrets/db_password
+  paperless_secret_key:
+    file: ./secrets/paperless_secret_key
+  authelia_jwt_secret:
+    file: ./secrets/authelia_jwt_secret
+  authelia_session_secret:
+    file: ./secrets/authelia_session_secret
