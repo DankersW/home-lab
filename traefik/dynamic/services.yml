@@ -9,3 +9,4 @@ http:
       loadBalancer:
         servers:
           - url: "http://paperless_app:8000"
+        passHostHeader: true

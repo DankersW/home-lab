@@ -1,13 +1,15 @@
 http:
   routers:
     homer:
-      rule: "Host(`dev.dankers.io`)"
+      rule: "Host(`home.dankers.io`)"
       service: homer
       entryPoints:
         - web
 
     paperless:
-      rule: "Host(`paperless.dev.dankers.io`)"
+      rule: "Host(`paperless.dankers.io`)"
       service: paperless
       entryPoints:
         - web
+      middlewares:
+        - paperless-headers

@@ -6,3 +6,8 @@ providers:
   file:
     directory: "/etc/traefik/dynamic"
     watch: true
+
+accessLog: {}
+
+log:
+  level: DEBUG

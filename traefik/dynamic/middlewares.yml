@@ -1,5 +1,11 @@
+# Middlewares for header forwarding and security
 
-# Empty placeholder for future Authelia & security middlewares.
 
-#http:
-#  middlewares: {}
+http:
+  middlewares:
+    paperless-headers:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Content-Type-Options: "nosniff"
