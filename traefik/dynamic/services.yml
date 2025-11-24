@@ -1,0 +1,11 @@
+http:
+  services:
+    homer:
+      loadBalancer:
+        servers:
+          - url: "http://homer:8080"
+
+    paperless:
+      loadBalancer:
+        servers:
+          - url: "http://paperless_app:8000"

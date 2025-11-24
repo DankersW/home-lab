@@ -10,3 +10,5 @@ paperless/data/
 paperless/media/
 
 pgdata
+
+cloudflared/homelab.json

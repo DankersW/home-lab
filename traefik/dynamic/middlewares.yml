@@ -1,0 +1,5 @@
+
+# Empty placeholder for future Authelia & security middlewares.
+
+#http:
+#  middlewares: {}

@@ -1,0 +1,13 @@
+http:
+  routers:
+    homer:
+      rule: "Host(`dev.dankers.io`)"
+      service: homer
+      entryPoints:
+        - web
+
+    paperless:
+      rule: "Host(`paperless.dev.dankers.io`)"
+      service: paperless
+      entryPoints:
+        - web

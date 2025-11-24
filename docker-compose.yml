@@ -2,14 +2,14 @@ services:
 
   paperless_redis:
     image: redis:7
-    container_name: paperless_redis
+    container_name: homelab_paperless_redis
     restart: unless-stopped
     volumes:
       - redis_data:/data
 
   paperless_db:
     image: postgres:15
-    container_name: paperless_db
+    container_name: homelab_paperless_db
     restart: unless-stopped
     volumes:
       - ./pgdata:/var/lib/postgresql/data
@@ -22,7 +22,7 @@ services:
 
   paperless_app:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
-    container_name: paperless_app
+    container_name: homelab_paperless_app
     restart: unless-stopped
     depends_on:
       - paperless_db  
@@ -37,6 +37,8 @@ services:
     secrets:
       - db_password
       - paperless_secret_key
+    networks:
+      - homelab
     environment:
       PAPERLESS_REDIS: redis://paperless_redis:6379
       PAPERLESS_DBHOST: paperless_db
@@ -47,6 +49,7 @@ services:
       PAPERLESS_TIME_ZONE: Europe/Stockholm
       PAPERLESS_OCR_LANGUAGE: eng
 
+
   homer:
     image: b4bz/homer
     container_name: homer_dashboard
@@ -55,12 +58,43 @@ services:
       - "8080:8080"
     volumes:
       - ./homer/assets:/www/assets
+    networks:
+      - homelab
     environment:
       - UID=1000
       - GID=1000
 
+
+  traefik:
+    image: traefik:v2.11
+    container_name: homelab_traefik
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+    networks:
+      - homelab
+    restart: unless-stopped
+
+  
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: homelab_cloudflared
+    command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflared_token
+    secrets:
+      - cloudflared_token
+    networks:
+      - homelab
+    restart: unless-stopped
+
 volumes:
   redis_data:
+
+
+networks:
+  homelab:
+    driver: bridge
 
 
 secrets:
@@ -68,7 +102,5 @@ secrets:
     file: ./secrets/db_password
   paperless_secret_key:
     file: ./secrets/paperless_secret_key
-  authelia_jwt_secret:
-    file: ./secrets/authelia_jwt_secret
-  authelia_session_secret:
-    file: ./secrets/authelia_session_secret
+  cloudflared_token:
+    file: ./secrets/cloudflared_token

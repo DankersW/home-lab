@@ -11,14 +11,6 @@ bootstrap:
 	mkdir -p homer/assets
 	$(MAKE) -s init-secrets
 
-
-.PHONY: create-user
-create-user:
-	@echo "--- Creating Paperless Superuser ---"
-	@echo "Please follow the prompts to create your admin account."
-	@echo "(If this hangs or fails, wait ~30 seconds for the database to be ready and try again)"
-	docker compose exec $(APP_SERVICE_NAME) createsuperuser
-
 .PHONY: init-secrets
 init-secrets: 
 	@echo "--- Generating secrets (if needed) ---"
@@ -28,7 +20,19 @@ init-secrets:
 	@if [ ! -f "secrets/paperless_secret_key" ]; then \
 		openssl rand -hex 32 | tr -d '\n' > secrets/paperless_secret_key; \
 	fi
+	@if [ ! -f "secrets/cloudflared_token" ]; then \
+		mkdir -p secrets/cloudflared_token"; \
+	fi
 	@echo "--- Done with secrets ---"
+
+
+.PHONY: create-user
+create-user:
+	@echo "--- Creating Paperless Superuser ---"
+	@echo "Please follow the prompts to create your admin account."
+	@echo "(If this hangs or fails, wait ~30 seconds for the database to be ready and try again)"
+	docker compose exec $(APP_SERVICE_NAME) createsuperuser
+
 
 .PHONY: up
 up:
