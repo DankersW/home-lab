@@ -1,8 +1,7 @@
 # TODO
 
-* landing page with all services
 * media with jellyfin and torrents
 * setting up extrernal ssd for media storage
-* keeping receipts and documents
 * splitwise alternative
-
+* keeping a TODO/list app --> maybe Vikunja
+* meal prep app -->  maybe Mealie or Tandoor
