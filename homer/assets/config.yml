@@ -11,7 +11,7 @@ services:
       - name: "Receipts (Paperless)"
         subtitle: "Document Management"
         tag: "Office"
-        url: "https://paperless.dankers.io"
+        url: "https://archive.dankers.io"
   - name: "Media"
     items:
       - name: "jellyfin"

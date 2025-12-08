@@ -1,11 +1,9 @@
-# Middlewares for header forwarding and security
-
-
 http:
   middlewares:
     paperless-headers:
       headers:
         customRequestHeaders:
           X-Forwarded-Proto: "https"
+          Remote-User: ""
         customResponseHeaders:
           X-Content-Type-Options: "nosniff"

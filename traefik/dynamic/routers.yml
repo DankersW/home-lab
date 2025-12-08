@@ -7,7 +7,7 @@ http:
         - web
 
     paperless:
-      rule: "Host(`paperless.dankers.io`)"
+      rule: "Host(`archive.dankers.io`)"
       service: paperless
       entryPoints:
         - web

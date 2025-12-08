@@ -8,7 +8,6 @@ services:
       - homelab
     volumes:
       - redis_data:/data
-
   paperless_db:
     image: postgres:15
     container_name: homelab_paperless_db
@@ -23,7 +22,6 @@ services:
       POSTGRES_DB: paperless
       POSTGRES_USER: paperless
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
-
   paperless_app:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     container_name: homelab_paperless_app
@@ -43,15 +41,11 @@ services:
       - paperless_secret_key
     networks:
       - homelab
+    env_file:
+      - ./paperless/paperless.env
     environment:
-      PAPERLESS_REDIS: redis://paperless_redis:6379
-      PAPERLESS_DBHOST: paperless_db
-      PAPERLESS_DBUSER: paperless
       PAPERLESS_DBPASS_FILE: /run/secrets/db_password
       PAPERLESS_SECRET_KEY_FILE: /run/secrets/paperless_secret_key
-      PAPERLESS_URL: https://paperless.dankers.io
-      PAPERLESS_TIME_ZONE: Europe/Stockholm
-      PAPERLESS_OCR_LANGUAGE: eng
 
 
   homer:
