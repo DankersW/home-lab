@@ -21,7 +21,10 @@ init-secrets:
 		openssl rand -hex 32 | tr -d '\n' > secrets/paperless_secret_key; \
 	fi
 	@if [ ! -f "secrets/cloudflared_token" ]; then \
-		mkdir -p secrets/cloudflared_token"; \
+		mkdir -p secrets/cloudflared_token; \
+	fi
+	@if [ ! -f "secrets/paperless_admin_password" ]; then \
+		openssl rand -hex 24 | tr -d '\n' > secrets/paperless_admin_password; \
 	fi
 	@echo "--- Done with secrets ---"
 

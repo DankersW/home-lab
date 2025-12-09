@@ -23,14 +23,12 @@ services:
       POSTGRES_USER: paperless
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
   paperless_app:
-    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    image: ghcr.io/paperless-ngx/paperless-ngx:2.20
     container_name: homelab_paperless_app
     restart: unless-stopped
     depends_on:
       - paperless_db  
-      - paperless_redis 
-    ports:
-      - "8000:8000"
+      - paperless_redis
     volumes:
       - ./paperless/data:/usr/src/paperless/data
       - ./paperless/media:/usr/src/paperless/media
@@ -39,6 +37,7 @@ services:
     secrets:
       - db_password
       - paperless_secret_key
+      - paperless_admin_password
     networks:
       - homelab
     env_file:
@@ -46,6 +45,7 @@ services:
     environment:
       PAPERLESS_DBPASS_FILE: /run/secrets/db_password
       PAPERLESS_SECRET_KEY_FILE: /run/secrets/paperless_secret_key
+      PAPERLESS_ADMIN_PASSWORD_FILE: /run/secrets/paperless_admin_password
 
 
   homer:
@@ -102,3 +102,5 @@ secrets:
     file: ./secrets/paperless_secret_key
   cloudflared_token:
     file: ./secrets/cloudflared_token
+  paperless_admin_password:
+    file: ./secrets/paperless_admin_password
