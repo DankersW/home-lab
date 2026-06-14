@@ -34,6 +34,7 @@ func New(deps web.Deps) *Handler {
 	funcs := template.FuncMap{
 		"date":        formatDate,
 		"amountValue": amountValue,
+		"today":       func() string { return time.Now().Format("2006-01-02") },
 	}
 	tmpl := template.Must(template.New("").Funcs(funcs).ParseFS(templateFS, "templates/*.gohtml"))
 	return &Handler{deps: deps, tmpl: tmpl}

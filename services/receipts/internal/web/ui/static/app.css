@@ -21,6 +21,5 @@ section { margin-bottom: 2.5rem; }
 .attachments { display: flex; flex-wrap: wrap; gap: 1rem; }
 .attachment { margin: 0; text-align: center; }
 .attachment figcaption { font-size: .8rem; }
-.warranty-toggle { display: flex; align-items: center; gap: .4rem; }
 .error { color: var(--pico-del-color, #b00020); font-weight: 600; }
 table a { text-decoration: none; }

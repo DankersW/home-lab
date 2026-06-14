@@ -1,20 +1,19 @@
 {{define "receipt_list"}}
 <figure id="receipt-results">
 <table>
-  <thead><tr><th>Date</th><th>Merchant</th><th>Title</th><th>Amount</th><th>Warranty</th><th>By</th></tr></thead>
+  <thead><tr><th>Title</th><th>Merchant</th><th>Date</th><th>Amount</th><th>By</th></tr></thead>
   <tbody>
-    {{range .Receipts}}{{template "receipt_row" .}}{{else}}<tr><td colspan="6"><em>No receipts found.</em></td></tr>{{end}}
+    {{range .Receipts}}{{template "receipt_row" .}}{{else}}<tr><td colspan="5"><em>No receipts found.</em></td></tr>{{end}}
   </tbody>
 </table>
 </figure>
 {{end}}
 
 {{define "receipt_row"}}<tr>
-  <td>{{.PurchaseDate | date}}</td>
-  <td>{{.Merchant}}</td>
   <td><a href="/receipts/{{.ID}}">{{if .Title}}{{.Title}}{{else}}(untitled){{end}}</a></td>
+  <td>{{.Merchant}}</td>
+  <td>{{.PurchaseDate | date}}</td>
   <td>{{.Amount}}</td>
-  <td>{{if .WarrantyUntil}}<small>{{.WarrantyUntil | date}}</small>{{else}}—{{end}}</td>
   <td><small>{{.UploaderEmail}}</small></td>
 </tr>{{end}}
 

@@ -99,7 +99,7 @@ func TestAPIReceiptLifecycle(t *testing.T) {
 
 	// Create a receipt.
 	create := `{"merchant":"Coolblue","title":"OLED TV","purchase_date":"2026-02-20",` +
-		`"amount":"899.00","currency":"EUR","tags":["electronics"],"warranty_until":"2028-01-01"}`
+		`"amount":"899.00","tags":["electronics"]}`
 	rec := do(t, h, http.MethodPost, "/receipts", "application/json", bytes.NewBufferString(create))
 	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
 

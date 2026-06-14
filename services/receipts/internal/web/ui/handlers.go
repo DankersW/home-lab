@@ -339,10 +339,6 @@ func (h *Handler) parseQuery(ctx context.Context, r *http.Request) (receipt.Rece
 	if to, ok := parseDate(v.Get("to")); ok {
 		q.PurchaseTo = &to
 	}
-	if v.Get("warranty_active") == "1" {
-		now := time.Now().UTC()
-		q.WarrantyActiveAt = &now
-	}
 	return q, nil
 }
 
@@ -374,31 +370,15 @@ func parseReceiptFields(r *http.Request) (*receipt.Receipt, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", web.ErrValidation, err)
 	}
-	currency := strings.ToUpper(strings.TrimSpace(r.FormValue("currency")))
-	if currency == "" {
-		currency = "EUR"
-	}
-	if len(currency) != 3 {
-		return nil, fmt.Errorf("%w: currency must be a 3-letter code", web.ErrValidation)
-	}
 
-	rec := &receipt.Receipt{
+	return &receipt.Receipt{
 		Title:        strings.TrimSpace(r.FormValue("title")),
 		Description:  strings.TrimSpace(r.FormValue("description")),
 		Merchant:     merchant,
 		PurchaseDate: purchase.UTC(),
-		Amount:       receipt.Money{AmountMinor: amountMinor, Currency: currency},
+		Amount:       receipt.Money{AmountMinor: amountMinor, Currency: receipt.DefaultCurrency},
 		Note:         strings.TrimSpace(r.FormValue("note")),
-	}
-	if wu := strings.TrimSpace(r.FormValue("warranty_until")); wu != "" {
-		warranty, err := time.Parse("2006-01-02", wu)
-		if err != nil {
-			return nil, fmt.Errorf("%w: warranty date must be YYYY-MM-DD", web.ErrValidation)
-		}
-		w := warranty.UTC()
-		rec.WarrantyUntil = &w
-	}
-	return rec, nil
+	}, nil
 }
 
 func splitTags(s string) []string {

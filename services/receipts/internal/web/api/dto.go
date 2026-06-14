@@ -13,16 +13,15 @@ const dateLayout = "2006-01-02"
 // receiptRequest is the JSON body for creating or updating a receipt. Amount may
 // be given as integer minor units (amount_minor) or a human string (amount).
 type receiptRequest struct {
-	Title         string   `json:"title"`
-	Description   string   `json:"description"`
-	Merchant      string   `json:"merchant"`
-	PurchaseDate  string   `json:"purchase_date"` // YYYY-MM-DD
-	AmountMinor   *int64   `json:"amount_minor"`
-	Amount        string   `json:"amount"` // alternative to amount_minor, e.g. "12.99"
-	Currency      string   `json:"currency"`
-	Note          string   `json:"note"`
-	WarrantyUntil string   `json:"warranty_until"` // YYYY-MM-DD, optional
-	Tags          []string `json:"tags"`
+	Title        string   `json:"title"`
+	Description  string   `json:"description"`
+	Merchant     string   `json:"merchant"`
+	PurchaseDate string   `json:"purchase_date"` // YYYY-MM-DD
+	AmountMinor  *int64   `json:"amount_minor"`
+	Amount       string   `json:"amount"` // alternative to amount_minor, e.g. "12.99"
+	Currency     string   `json:"currency"`
+	Note         string   `json:"note"`
+	Tags         []string `json:"tags"`
 }
 
 // toReceipt validates the request and maps it to a domain receipt (without ID,
@@ -48,29 +47,20 @@ func (req receiptRequest) toReceipt() (*receipt.Receipt, error) {
 
 	currency := req.Currency
 	if currency == "" {
-		currency = "EUR"
+		currency = receipt.DefaultCurrency
 	}
 	if len(currency) != 3 {
 		return nil, fmt.Errorf("%w: currency must be a 3-letter code", web.ErrValidation)
 	}
 
-	rec := &receipt.Receipt{
+	return &receipt.Receipt{
 		Title:        req.Title,
 		Description:  req.Description,
 		Merchant:     req.Merchant,
 		PurchaseDate: purchase.UTC(),
 		Amount:       receipt.Money{AmountMinor: amountMinor, Currency: currency},
 		Note:         req.Note,
-	}
-	if req.WarrantyUntil != "" {
-		warranty, err := time.Parse(dateLayout, req.WarrantyUntil)
-		if err != nil {
-			return nil, fmt.Errorf("%w: warranty_until must be YYYY-MM-DD", web.ErrValidation)
-		}
-		w := warranty.UTC()
-		rec.WarrantyUntil = &w
-	}
-	return rec, nil
+	}, nil
 }
 
 // receiptDTO is the JSON representation of a receipt.
@@ -83,7 +73,6 @@ type receiptDTO struct {
 	AmountMinor   int64           `json:"amount_minor"`
 	Currency      string          `json:"currency"`
 	Note          string          `json:"note"`
-	WarrantyUntil *string         `json:"warranty_until,omitempty"`
 	UploaderEmail string          `json:"uploader_email"`
 	CreatedAt     time.Time       `json:"created_at"`
 	UpdatedAt     time.Time       `json:"updated_at"`
@@ -115,10 +104,6 @@ func toReceiptDTO(r *receipt.Receipt) receiptDTO {
 		UpdatedAt:     r.UpdatedAt,
 		Tags:          make([]string, 0, len(r.Tags)),
 		Attachments:   make([]attachmentDTO, 0, len(r.Attachments)),
-	}
-	if r.WarrantyUntil != nil {
-		s := r.WarrantyUntil.UTC().Format(dateLayout)
-		dto.WarrantyUntil = &s
 	}
 	for _, t := range r.Tags {
 		dto.Tags = append(dto.Tags, t.Name)

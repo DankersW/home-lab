@@ -25,7 +25,6 @@ type ExportReceipt struct {
 	AmountMinor   int64              `json:"amount_minor"`
 	Currency      string             `json:"currency"`
 	Note          string             `json:"note"`
-	WarrantyUntil *time.Time         `json:"warranty_until,omitempty"`
 	UploaderEmail string             `json:"uploader_email"`
 	CreatedAt     time.Time          `json:"created_at"`
 	UpdatedAt     time.Time          `json:"updated_at"`

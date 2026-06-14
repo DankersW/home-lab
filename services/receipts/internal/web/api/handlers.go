@@ -314,10 +314,6 @@ func (h *Handler) parseQuery(ctx context.Context, r *http.Request) (receipt.Rece
 	if to, ok := parseDate(v.Get("to")); ok {
 		q.PurchaseTo = &to
 	}
-	if v.Get("warranty_active") == "1" {
-		now := time.Now().UTC()
-		q.WarrantyActiveAt = &now
-	}
 	return q, nil
 }
 

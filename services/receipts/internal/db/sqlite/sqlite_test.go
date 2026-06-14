@@ -76,9 +76,7 @@ func TestCreateGetReceiptWithTagsAndAttachment(t *testing.T) {
 	tags, err := db.EnsureTags(ctx, []string{"appliance", "kitchen"})
 	require.NoError(t, err)
 
-	warranty := time.Date(2028, 1, 1, 0, 0, 0, 0, time.UTC)
 	r := newReceipt("wouter@example.com", "MediaMarkt", 49999, time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC))
-	r.WarrantyUntil = &warranty
 	r.Tags = tags
 	require.NoError(t, db.CreateReceipt(ctx, r))
 
@@ -99,8 +97,6 @@ func TestCreateGetReceiptWithTagsAndAttachment(t *testing.T) {
 	require.Equal(t, "MediaMarkt", got.Merchant)
 	require.Equal(t, int64(49999), got.Amount.AmountMinor)
 	require.Equal(t, "EUR", got.Amount.Currency)
-	require.NotNil(t, got.WarrantyUntil)
-	require.True(t, warranty.Equal(*got.WarrantyUntil))
 	require.Len(t, got.Tags, 2)
 	require.Len(t, got.Attachments, 1)
 	require.Equal(t, "receipt.pdf", got.Attachments[0].Filename)
@@ -122,11 +118,9 @@ func TestListReceiptsFilters(t *testing.T) {
 	groceries.Tags = food
 	require.NoError(t, db.CreateReceipt(ctx, groceries))
 
-	warranty := time.Date(2027, 6, 1, 0, 0, 0, 0, time.UTC)
 	tv := newReceipt("partner@example.com", "Coolblue", 89900, time.Date(2026, 2, 20, 0, 0, 0, 0, time.UTC))
 	tv.Title = "OLED television"
 	tv.Tags = electronics
-	tv.WarrantyUntil = &warranty
 	require.NoError(t, db.CreateReceipt(ctx, tv))
 
 	all, err := db.ListReceipts(ctx, receipt.ReceiptQuery{})
@@ -152,12 +146,6 @@ func TestListReceiptsFilters(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, byAmount, 1)
 	require.Equal(t, "Coolblue", byAmount[0].Merchant)
-
-	at := time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
-	activeWarranty, err := db.ListReceipts(ctx, receipt.ReceiptQuery{WarrantyActiveAt: &at})
-	require.NoError(t, err)
-	require.Len(t, activeWarranty, 1)
-	require.Equal(t, "Coolblue", activeWarranty[0].Merchant)
 
 	from := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
 	byDate, err := db.ListReceipts(ctx, receipt.ReceiptQuery{PurchaseFrom: &from})

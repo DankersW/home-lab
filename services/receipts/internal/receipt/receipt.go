@@ -12,6 +12,10 @@ import (
 // ErrNotFound is returned by stores when a requested entity does not exist.
 var ErrNotFound = errors.New("receipt: not found")
 
+// DefaultCurrency is the household currency. The UI is single-currency; the API
+// may still override it per receipt.
+const DefaultCurrency = "SEK"
+
 // Money is an exact monetary amount: integer minor units plus an ISO-4217 code.
 // Integers avoid floating-point rounding error.
 type Money struct {
@@ -48,18 +52,12 @@ type Receipt struct {
 	PurchaseDate  time.Time
 	Amount        Money
 	Note          string
-	WarrantyUntil *time.Time // nil == no warranty tracked
 	UploaderEmail string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 
 	Tags        []Tag        // hydrated by Get; empty on lean list rows
 	Attachments []Attachment // hydrated by Get; empty on lean list rows
-}
-
-// WarrantyActive reports whether a warranty is present and still in force at t.
-func (r Receipt) WarrantyActive(t time.Time) bool {
-	return r.WarrantyUntil != nil && !r.WarrantyUntil.Before(t)
 }
 
 // Tag is a household-shared label. Name is stored normalized (lower, trimmed).

@@ -31,7 +31,7 @@ const dsnFmt = "file:%s?" +
 	"_pragma=synchronous(NORMAL)"
 
 const selectReceiptCols = `SELECT id, title, description, merchant, purchase_date,
-	amount_minor, currency, note, warranty_until, uploader_email, created_at, updated_at`
+	amount_minor, currency, note, uploader_email, created_at, updated_at`
 
 // Open opens (creating if needed) the database at path, applies all embedded
 // migrations, and returns a ready repository.
@@ -80,10 +80,10 @@ func (d *DB) CreateReceipt(ctx context.Context, r *receipt.Receipt) error {
 	if _, err := tx.ExecContext(ctx, `
 		INSERT INTO receipts
 			(id, title, description, merchant, purchase_date, amount_minor, currency,
-			 note, warranty_until, uploader_email, created_at, updated_at)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+			 note, uploader_email, created_at, updated_at)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
 		r.ID, r.Title, r.Description, r.Merchant, fmtTime(r.PurchaseDate),
-		r.Amount.AmountMinor, r.Amount.Currency, r.Note, nullableTime(r.WarrantyUntil),
+		r.Amount.AmountMinor, r.Amount.Currency, r.Note,
 		r.UploaderEmail, fmtTime(r.CreatedAt), fmtTime(r.UpdatedAt),
 	); err != nil {
 		return fmt.Errorf("sqlite: insert receipt: %w", err)
@@ -129,10 +129,10 @@ func (d *DB) UpdateReceipt(ctx context.Context, r *receipt.Receipt) error {
 
 	res, err := tx.ExecContext(ctx, `
 		UPDATE receipts SET title=?, description=?, merchant=?, purchase_date=?,
-			amount_minor=?, currency=?, note=?, warranty_until=?, updated_at=?
+			amount_minor=?, currency=?, note=?, updated_at=?
 		WHERE id=?`,
 		r.Title, r.Description, r.Merchant, fmtTime(r.PurchaseDate),
-		r.Amount.AmountMinor, r.Amount.Currency, r.Note, nullableTime(r.WarrantyUntil),
+		r.Amount.AmountMinor, r.Amount.Currency, r.Note,
 		fmtTime(r.UpdatedAt), r.ID,
 	)
 	if err != nil {
@@ -219,10 +219,6 @@ func (d *DB) ListReceipts(ctx context.Context, q receipt.ReceiptQuery) ([]receip
 		sb.WriteString(` AND r.currency = ?`)
 		args = append(args, q.Currency)
 	}
-	if q.WarrantyActiveAt != nil {
-		sb.WriteString(` AND r.warranty_until IS NOT NULL AND r.warranty_until >= ?`)
-		args = append(args, fmtTime(*q.WarrantyActiveAt))
-	}
 	if q.UploaderEmail != "" {
 		sb.WriteString(` AND r.uploader_email = ?`)
 		args = append(args, q.UploaderEmail)
@@ -268,7 +264,7 @@ func (d *DB) ExportAll(ctx context.Context) (receipt.Export, error) {
 		er := receipt.ExportReceipt{
 			ID: full.ID, Title: full.Title, Description: full.Description, Merchant: full.Merchant,
 			PurchaseDate: full.PurchaseDate, AmountMinor: full.Amount.AmountMinor, Currency: full.Amount.Currency,
-			Note: full.Note, WarrantyUntil: full.WarrantyUntil, UploaderEmail: full.UploaderEmail,
+			Note: full.Note, UploaderEmail: full.UploaderEmail,
 			CreatedAt: full.CreatedAt, UpdatedAt: full.UpdatedAt,
 		}
 		for _, t := range full.Tags {
@@ -473,14 +469,13 @@ func scanReceipt(s scanner) (*receipt.Receipt, error) {
 	var (
 		r           receipt.Receipt
 		purchase    string
-		warranty    sql.NullString
 		created     string
 		updated     string
 		currency    string
 		amountMinor int64
 	)
 	if err := s.Scan(&r.ID, &r.Title, &r.Description, &r.Merchant, &purchase,
-		&amountMinor, &currency, &r.Note, &warranty, &r.UploaderEmail, &created, &updated); err != nil {
+		&amountMinor, &currency, &r.Note, &r.UploaderEmail, &created, &updated); err != nil {
 		return nil, err
 	}
 	var err error
@@ -492,13 +487,6 @@ func scanReceipt(s scanner) (*receipt.Receipt, error) {
 	}
 	if r.UpdatedAt, err = parseTime(updated); err != nil {
 		return nil, fmt.Errorf("parse updated_at: %w", err)
-	}
-	if warranty.Valid {
-		w, err := parseTime(warranty.String)
-		if err != nil {
-			return nil, fmt.Errorf("parse warranty_until: %w", err)
-		}
-		r.WarrantyUntil = &w
 	}
 	r.Amount = receipt.Money{AmountMinor: amountMinor, Currency: currency}
 	return &r, nil
@@ -548,13 +536,6 @@ func tagsFromIDs(ids []string) []receipt.Tag {
 }
 
 func normalizeTag(s string) string { return strings.ToLower(strings.TrimSpace(s)) }
-
-func nullableTime(t *time.Time) any {
-	if t == nil {
-		return nil
-	}
-	return fmtTime(*t)
-}
 
 func fmtTime(t time.Time) string { return t.UTC().Format(time.RFC3339) }
 

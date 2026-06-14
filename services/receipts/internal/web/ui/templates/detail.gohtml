@@ -6,10 +6,7 @@
     <h2>{{if .Title}}{{.Title}}{{else}}{{.Merchant}}{{end}}</h2>
     <p><strong>{{.Merchant}}</strong> · {{.Amount}} · {{.PurchaseDate | date}}</p>
   </hgroup>
-  <p>
-    {{if .WarrantyUntil}}🛡 <strong>Warranty until {{.WarrantyUntil | date}}</strong><br>{{end}}
-    <small>Added by {{.UploaderEmail}}</small>
-  </p>
+  <p><small>Added by {{.UploaderEmail}}</small></p>
   {{if .Description}}<p>{{.Description}}</p>{{end}}
   {{if .Note}}<blockquote>{{.Note}}</blockquote>{{end}}
 
@@ -37,15 +34,13 @@
     <summary>Edit details</summary>
     <form hx-put="/receipts/{{.ID}}">
       <div class="grid">
-        <label>Merchant<input name="merchant" value="{{.Merchant}}" required></label>
         <label>Title<input name="title" value="{{.Title}}"></label>
+        <label>Merchant<input name="merchant" value="{{.Merchant}}" required></label>
       </div>
       <div class="grid">
         <label>Purchase date<input type="date" name="purchase_date" value="{{.PurchaseDate | date}}" required></label>
         <label>Amount<input name="amount" value="{{.Amount | amountValue}}" required></label>
-        <label>Currency<input name="currency" value="{{.Amount.Currency}}" maxlength="3"></label>
       </div>
-      <label>Warranty until<input type="date" name="warranty_until" value="{{.WarrantyUntil | date}}"></label>
       <label>Note<textarea name="note">{{.Note}}</textarea></label>
       <button type="submit">Save changes</button>
     </form>

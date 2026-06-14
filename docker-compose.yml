@@ -20,14 +20,11 @@ services:
       LISTEN_ADDR: ":8080"
       SQLITE_PATH: /data/receipts.db
       TMPDIR: /data/tmp
-      # Use the compose service name (no underscore): MinIO rejects a Host
-      # header containing '_' with "invalid hostname".
       MINIO_ENDPOINT: minio:9000
       MINIO_BUCKET: receipts
       MINIO_ACCESS_KEY_FILE: /run/secrets/minio_access_key
       MINIO_SECRET_KEY_FILE: /run/secrets/minio_secret_key
       REQUIRE_AUTH: "true"
-    # No published ports — reachable only via Traefik on the homelab network.
 
   minio:
     image: minio/minio:latest
@@ -44,7 +41,6 @@ services:
     environment:
       MINIO_ROOT_USER_FILE: /run/secrets/minio_access_key
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_secret_key
-    # No published ports — internal only.
 
   homer:
     image: b4bz/homer
