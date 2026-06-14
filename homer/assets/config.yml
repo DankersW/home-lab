@@ -8,10 +8,10 @@ services:
   - name: "Documents"
     icon: "fas fa-file-alt"
     items:
-      - name: "Receipts (Paperless)"
-        subtitle: "Document Management"
+      - name: "Receipts"
+        subtitle: "Purchase & warranty tracker"
         tag: "Office"
-        url: "https://archive.dankers.io"
+        url: "https://receipts.dankers.io"
   - name: "Media"
     items:
       - name: "jellyfin"

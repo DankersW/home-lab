@@ -6,10 +6,10 @@ http:
       entryPoints:
         - web
 
-    paperless:
-      rule: "Host(`archive.dankers.io`)"
-      service: paperless
+    receipts:
+      rule: "Host(`receipts.dankers.io`)"
+      service: receipts
       entryPoints:
         - web
       middlewares:
-        - paperless-headers
+        - receipts-headers

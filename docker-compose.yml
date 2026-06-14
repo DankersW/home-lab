@@ -1,52 +1,50 @@
 services:
 
-  paperless_redis:
-    image: redis:7
-    container_name: homelab_paperless_redis
+  receipts:
+    build:
+      context: ./services/receipts
+    image: homelab/receipts:latest
+    container_name: homelab_receipts
     restart: unless-stopped
-    networks:
-      - homelab
-    volumes:
-      - redis_data:/data
-  paperless_db:
-    image: postgres:15
-    container_name: homelab_paperless_db
-    restart: unless-stopped
-    volumes:
-      - ./pgdata:/var/lib/postgresql/data
-    secrets:
-      - db_password
-    networks:
-      - homelab
-    environment:
-      POSTGRES_DB: paperless
-      POSTGRES_USER: paperless
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
-  paperless_app:
-    image: ghcr.io/paperless-ngx/paperless-ngx:2.20
-    container_name: homelab_paperless_app
-    restart: unless-stopped
+    user: "1000:1000"
     depends_on:
-      - paperless_db  
-      - paperless_redis
+      - minio
     volumes:
-      - ./paperless/data:/usr/src/paperless/data
-      - ./paperless/media:/usr/src/paperless/media
-      - ./paperless/export:/usr/src/paperless/export
-      - ./paperless/consume:/usr/src/paperless/consume
+      - ./services/receipts/data:/data
     secrets:
-      - db_password
-      - paperless_secret_key
-      - paperless_admin_password
+      - minio_access_key
+      - minio_secret_key
     networks:
       - homelab
-    env_file:
-      - ./paperless/paperless.env
     environment:
-      PAPERLESS_DBPASS_FILE: /run/secrets/db_password
-      PAPERLESS_SECRET_KEY_FILE: /run/secrets/paperless_secret_key
-      PAPERLESS_ADMIN_PASSWORD_FILE: /run/secrets/paperless_admin_password
+      LISTEN_ADDR: ":8080"
+      SQLITE_PATH: /data/receipts.db
+      TMPDIR: /data/tmp
+      # Use the compose service name (no underscore): MinIO rejects a Host
+      # header containing '_' with "invalid hostname".
+      MINIO_ENDPOINT: minio:9000
+      MINIO_BUCKET: receipts
+      MINIO_ACCESS_KEY_FILE: /run/secrets/minio_access_key
+      MINIO_SECRET_KEY_FILE: /run/secrets/minio_secret_key
+      REQUIRE_AUTH: "true"
+    # No published ports — reachable only via Traefik on the homelab network.
 
+  minio:
+    image: minio/minio:latest
+    container_name: homelab_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./minio/data:/data
+    secrets:
+      - minio_access_key
+      - minio_secret_key
+    networks:
+      - homelab
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_access_key
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_secret_key
+    # No published ports — internal only.
 
   homer:
     image: b4bz/homer
@@ -62,7 +60,6 @@ services:
       - UID=1000
       - GID=1000
 
-
   traefik:
     image: traefik:v2.11
     container_name: homelab_traefik
@@ -75,7 +72,6 @@ services:
       - homelab
     restart: unless-stopped
 
-  
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: homelab_cloudflared
@@ -86,9 +82,6 @@ services:
       - homelab
     restart: unless-stopped
 
-volumes:
-  redis_data:
-
 
 networks:
   homelab:
@@ -96,11 +89,9 @@ networks:
 
 
 secrets:
-  db_password:
-    file: ./secrets/db_password
-  paperless_secret_key:
-    file: ./secrets/paperless_secret_key
   cloudflared_token:
     file: ./secrets/cloudflared_token
-  paperless_admin_password:
-    file: ./secrets/paperless_admin_password
+  minio_access_key:
+    file: ./secrets/minio_access_key
+  minio_secret_key:
+    file: ./secrets/minio_secret_key

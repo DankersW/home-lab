@@ -1,0 +1,26 @@
+/* Small tweaks on top of Pico.css. */
+section { margin-bottom: 2.5rem; }
+
+.preview { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0; }
+.thumb {
+  max-width: 120px; max-height: 120px;
+  object-fit: cover; border-radius: var(--pico-border-radius);
+  border: 1px solid var(--pico-muted-border-color);
+}
+.filechip {
+  display: inline-block; padding: .25rem .5rem;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+}
+.chip {
+  display: inline-block; padding: .1rem .6rem; margin: .1rem;
+  background: var(--pico-secondary-background);
+  color: var(--pico-secondary-inverse);
+  border-radius: 1rem; font-size: .85rem;
+}
+.attachments { display: flex; flex-wrap: wrap; gap: 1rem; }
+.attachment { margin: 0; text-align: center; }
+.attachment figcaption { font-size: .8rem; }
+.warranty-toggle { display: flex; align-items: center; gap: .4rem; }
+.error { color: var(--pico-del-color, #b00020); font-weight: 600; }
+table a { text-decoration: none; }
