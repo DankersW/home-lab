@@ -5,8 +5,8 @@ http:
         servers:
           - url: "http://homer:8080"
 
-    paperless:
+    receipts:
       loadBalancer:
         servers:
-          - url: "http://paperless_app:8000"
+          - url: "http://receipts:8080"
         passHostHeader: true

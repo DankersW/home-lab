@@ -1,9 +1,13 @@
 http:
   middlewares:
-    paperless-headers:
+    receipts-headers:
       headers:
         customRequestHeaders:
+          # Tell the backend the original scheme; TLS terminates at Cloudflare.
           X-Forwarded-Proto: "https"
-          Remote-User: ""
+          # NOTE: the Cf-Access-Authenticated-User-Email header is passed through
+          # untouched — the receipts service trusts it for the current user.
         customResponseHeaders:
           X-Content-Type-Options: "nosniff"
+          X-Frame-Options: "SAMEORIGIN"
+          Referrer-Policy: "strict-origin-when-cross-origin"

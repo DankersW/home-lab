@@ -1,0 +1,27 @@
+{{define "header"}}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} · Receipts</title>
+  <link rel="icon" type="image/png" href="/static/receipt.png">
+  <link rel="stylesheet" href="/static/pico.min.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+<nav class="container">
+  <ul><li><strong><a href="/">Receipts</a></strong></li></ul>
+  <ul><li><small>{{.User.Email}}</small></li></ul>
+</nav>
+<div id="flash" class="container"></div>
+<main class="container">
+{{end}}
+
+{{define "footer"}}
+</main>
+</body>
+</html>
+{{end}}
+
+{{define "flash_error"}}<div id="flash" class="container" hx-swap-oob="true"><p class="error" role="alert">{{.}}</p></div>{{end}}

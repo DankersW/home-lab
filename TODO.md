@@ -5,3 +5,5 @@
 * splitwise alternative
 * keeping a TODO/list app --> maybe Vikunja
 * meal prep app -->  maybe Mealie or Tandoor
+
+* receipts: new UI, take picture and upload, mobile friendly

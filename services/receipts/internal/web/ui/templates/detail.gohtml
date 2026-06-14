@@ -1,0 +1,56 @@
+{{define "detail"}}{{template "header" .}}
+{{with .Detail}}{{with .Receipt}}
+<article>
+  <header><a href="/">← All receipts</a></header>
+  <hgroup>
+    <h2>{{if .Title}}{{.Title}}{{else}}{{.Merchant}}{{end}}</h2>
+    <p><strong>{{.Merchant}}</strong> · {{.Amount}} · {{.PurchaseDate | date}}</p>
+  </hgroup>
+  <p><small>Added by {{.UploaderEmail}}</small></p>
+  {{if .Description}}<p>{{.Description}}</p>{{end}}
+  {{if .Note}}<blockquote>{{.Note}}</blockquote>{{end}}
+
+  <h3>Tags</h3>
+  <div id="tag-chips">{{template "tag_chips" .}}</div>
+  <form hx-post="/receipts/{{.ID}}/tags" hx-target="#tag-chips" hx-swap="innerHTML">
+    <div class="grid">
+      <input name="tags" placeholder="comma separated tags" value="{{range $i, $t := .Tags}}{{if $i}}, {{end}}{{$t.Name}}{{end}}">
+      <button type="submit" class="secondary">Save tags</button>
+    </div>
+  </form>
+
+  <h3>Files</h3>
+  <div id="attachments">{{template "attachments" .}}</div>
+  <form hx-post="/receipts/{{.ID}}/attachments" hx-encoding="multipart/form-data"
+        hx-target="#attachments" hx-swap="innerHTML"
+        hx-on::after-request="if(event.detail.successful){this.reset();}">
+    <div class="grid">
+      <input type="file" name="files" multiple accept="image/*,application/pdf">
+      <button type="submit" class="secondary">Add files</button>
+    </div>
+  </form>
+
+  <details>
+    <summary>Edit details</summary>
+    <form hx-put="/receipts/{{.ID}}">
+      <div class="grid">
+        <label>Title<input name="title" value="{{.Title}}"></label>
+        <label>Merchant<input name="merchant" value="{{.Merchant}}" required></label>
+      </div>
+      <div class="grid">
+        <label>Purchase date<input type="date" name="purchase_date" value="{{.PurchaseDate | date}}" required></label>
+        <label>Amount<input name="amount" value="{{.Amount | amountValue}}" required></label>
+      </div>
+      <label>Note<textarea name="note">{{.Note}}</textarea></label>
+      <button type="submit">Save changes</button>
+    </form>
+  </details>
+
+  <footer>
+    <button class="contrast" hx-delete="/receipts/{{.ID}}" hx-confirm="Delete this receipt and all its files?">
+      Delete receipt
+    </button>
+  </footer>
+</article>
+{{end}}{{end}}
+{{template "footer" .}}{{end}}
