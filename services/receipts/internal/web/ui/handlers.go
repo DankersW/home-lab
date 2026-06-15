@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -13,66 +14,156 @@ import (
 	"github.com/dankers/home-lab/services/receipts/internal/web"
 )
 
-// View types passed to templates.
-type pageEnvelope struct {
-	Title  string
-	User   auth.User
-	Index  *indexView
-	Detail *detailView
+const maxFormMemory = 8 << 20 // multipart in-memory threshold; overflow spills to TMPDIR
+
+// pageView is the model for a full page. Both shells render from it: the mobile
+// shell shows the screen named by Screen; the desktop shell always shows the
+// three-pane and uses Selected for the detail pane and active card.
+type pageView struct {
+	Title     string
+	User      auth.User
+	Flash     string
+	Screen    string // mobile screen: "add" | "list" | "detail" | "edit"
+	Query     string
+	ActiveTag string
+	Items     []listItem
+	Total     int // total receipts, ignoring the active filter
+	Tags      []receipt.TagCount
+	Selected  *receipt.Receipt // detail/edit target and desktop selection
 }
 
-type indexView struct {
-	Receipts []receipt.Receipt
-	Tags     []receipt.Tag
+// listItem is one card's data: a lean receipt plus its attachment rollup.
+type listItem struct {
+	R       receipt.Receipt
+	Count   int
+	ImageID string // first image attachment id, "" if none
 }
 
-type detailView struct {
+// resultsView is the model for the swappable list-results fragment.
+type resultsView struct {
+	Items     []listItem
+	Total     int
+	ActiveTag string
+	Desktop   bool
+	SelID     string // selected receipt id, for the active highlight
+}
+
+type modalView struct {
+	Mode    string // "add" | "edit"
 	Receipt *receipt.Receipt
 }
 
-type listView struct {
-	Receipts []receipt.Receipt
+type confirmView struct {
+	Receipt *receipt.Receipt
+	Desktop bool
 }
 
-type tagsView struct {
-	Tags []receipt.Tag
+// ---- pages ----
+
+func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
+	h.renderPage(w, r, "add", "Receipts", nil)
 }
 
-const maxFormMemory = 8 << 20 // multipart in-memory threshold; overflow spills to TMPDIR
+func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
+	h.renderPage(w, r, "list", "Your receipts", nil)
+}
 
-func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) detail(w http.ResponseWriter, r *http.Request) {
+	sel, err := h.deps.Store.GetReceipt(r.Context(), r.PathValue("id"))
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	h.renderPage(w, r, "detail", receiptTitle(sel), sel)
+}
+
+func (h *Handler) editPage(w http.ResponseWriter, r *http.Request) {
+	sel, err := h.deps.Store.GetReceipt(r.Context(), r.PathValue("id"))
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	h.renderPage(w, r, "edit", "Edit receipt", sel)
+}
+
+// renderPage loads the shell data (filtered list + tag counts + total) and
+// renders the full page for the given mobile screen and optional selection.
+func (h *Handler) renderPage(w http.ResponseWriter, r *http.Request, screen, title string, sel *receipt.Receipt) {
 	ctx := r.Context()
-	receipts, err := h.deps.Store.ListReceipts(ctx, receipt.ReceiptQuery{})
+	q, tag := searchParams(r)
+	items, tags, total, err := h.loadShell(ctx, q, tag)
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
-	tags, err := h.deps.Store.ListTags(ctx)
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	h.render(w, http.StatusOK, "index", pageEnvelope{
-		Title: "All receipts",
-		User:  auth.CurrentUser(ctx),
-		Index: &indexView{Receipts: receipts, Tags: tags},
+	h.render(w, http.StatusOK, "page", pageView{
+		Title:     title,
+		User:      auth.CurrentUser(ctx),
+		Flash:     flash(r),
+		Screen:    screen,
+		Query:     q,
+		ActiveTag: tag,
+		Items:     items,
+		Total:     total,
+		Tags:      tags,
+		Selected:  sel,
 	})
 }
 
-func (h *Handler) search(w http.ResponseWriter, r *http.Request) {
+// ---- fragments ----
+
+func (h *Handler) fragmentList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	q, err := h.parseQuery(ctx, r)
+	q, tag := searchParams(r)
+	items, _, total, err := h.loadShell(ctx, q, tag)
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
-	receipts, err := h.deps.Store.ListReceipts(ctx, q)
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	h.render(w, http.StatusOK, "receipt_list", listView{Receipts: receipts})
+	h.render(w, http.StatusOK, "list_results", resultsView{
+		Items:     items,
+		Total:     total,
+		ActiveTag: tag,
+		Desktop:   r.URL.Query().Get("shell") == "desktop",
+	})
 }
+
+func (h *Handler) fragmentModal(w http.ResponseWriter, r *http.Request) {
+	mode := r.URL.Query().Get("mode")
+	view := modalView{Mode: mode}
+	if mode == "edit" {
+		sel, err := h.deps.Store.GetReceipt(r.Context(), r.URL.Query().Get("id"))
+		if err != nil {
+			h.fail(w, r, err)
+			return
+		}
+		view.Receipt = sel
+	}
+	h.render(w, http.StatusOK, "form_modal", view)
+}
+
+func (h *Handler) fragmentConfirm(w http.ResponseWriter, r *http.Request) {
+	sel, err := h.deps.Store.GetReceipt(r.Context(), r.URL.Query().Get("id"))
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	h.render(w, http.StatusOK, "confirm", confirmView{
+		Receipt: sel,
+		Desktop: r.URL.Query().Get("shell") == "desktop",
+	})
+}
+
+func (h *Handler) fragmentDetail(w http.ResponseWriter, r *http.Request) {
+	sel, err := h.deps.Store.GetReceipt(r.Context(), r.URL.Query().Get("id"))
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	h.render(w, http.StatusOK, "detail_pane_inner", sel)
+}
+
+// ---- mutations ----
 
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -108,31 +199,11 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	full, err := h.deps.Store.GetReceipt(ctx, rec.ID)
-	if err != nil {
-		h.fail(w, r, err)
-		return
+	dest := "/receipts/" + rec.ID
+	if r.FormValue("origin") == "mobile" {
+		dest = "/list"
 	}
-	w.Header().Set("HX-Trigger", "receiptCreated")
-	h.render(w, http.StatusOK, "receipt_row", full)
-}
-
-func (h *Handler) detail(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	rec, err := h.deps.Store.GetReceipt(ctx, r.PathValue("id"))
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	title := rec.Title
-	if title == "" {
-		title = rec.Merchant
-	}
-	h.render(w, http.StatusOK, "detail", pageEnvelope{
-		Title:  title,
-		User:   auth.CurrentUser(ctx),
-		Detail: &detailView{Receipt: rec},
-	})
+	h.redirect(w, dest, "Receipt saved")
 }
 
 func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
@@ -142,9 +213,7 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, fmt.Errorf("%w: could not read the form", web.ErrValidation))
 		return
 	}
-	// Load the existing receipt to preserve tags (edited via the tag form, not here).
-	existing, err := h.deps.Store.GetReceipt(ctx, recID)
-	if err != nil {
+	if _, err := h.deps.Store.GetReceipt(ctx, recID); err != nil {
 		h.fail(w, r, err)
 		return
 	}
@@ -154,14 +223,20 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rec.ID = recID
-	rec.Tags = existing.Tags
 	rec.UpdatedAt = time.Now().UTC()
+
+	tags, err := h.deps.Store.EnsureTags(ctx, splitTags(r.FormValue("tags")))
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	rec.Tags = tags
+
 	if err := h.deps.Store.UpdateReceipt(ctx, rec); err != nil {
 		h.fail(w, r, err)
 		return
 	}
-	w.Header().Set("HX-Redirect", "/receipts/"+recID)
-	w.WriteHeader(http.StatusNoContent)
+	h.redirect(w, "/receipts/"+recID, "Changes saved")
 }
 
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
@@ -172,8 +247,7 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.purgeObjects(ctx, keys)
-	w.Header().Set("HX-Redirect", "/")
-	w.WriteHeader(http.StatusNoContent)
+	h.redirect(w, "/list", "Receipt deleted")
 }
 
 func (h *Handler) addAttachments(w http.ResponseWriter, r *http.Request) {
@@ -196,17 +270,7 @@ func (h *Handler) addAttachments(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
-	h.render(w, http.StatusOK, "attachments", full)
-}
-
-func (h *Handler) streamAttachment(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	att, err := h.deps.Store.GetAttachment(ctx, r.PathValue("id"), r.PathValue("attID"))
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	web.StreamAttachment(w, r, h.deps, att, strings.HasSuffix(r.URL.Path, "/download"))
+	h.render(w, http.StatusOK, "edit_thumbs", full)
 }
 
 func (h *Handler) deleteAttachment(w http.ResponseWriter, r *http.Request) {
@@ -227,69 +291,80 @@ func (h *Handler) deleteAttachment(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
-	h.render(w, http.StatusOK, "attachments", full)
+	h.render(w, http.StatusOK, "edit_thumbs", full)
 }
 
-func (h *Handler) listTags(w http.ResponseWriter, r *http.Request) {
-	tags, err := h.deps.Store.ListTags(r.Context())
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	h.render(w, http.StatusOK, "tag_datalist", tagsView{Tags: tags})
-}
-
-func (h *Handler) createTag(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) streamAttachment(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	if err := r.ParseForm(); err != nil {
-		h.fail(w, r, fmt.Errorf("%w: could not read the form", web.ErrValidation))
-		return
-	}
-	if strings.TrimSpace(r.FormValue("name")) == "" {
-		h.fail(w, r, fmt.Errorf("%w: tag name is required", web.ErrValidation))
-		return
-	}
-	if _, err := h.deps.Store.EnsureTags(ctx, []string{r.FormValue("name")}); err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	tags, err := h.deps.Store.ListTags(ctx)
+	att, err := h.deps.Store.GetAttachment(ctx, r.PathValue("id"), r.PathValue("attID"))
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
-	h.render(w, http.StatusOK, "tag_datalist", tagsView{Tags: tags})
-}
-
-func (h *Handler) setTags(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	recID := r.PathValue("id")
-	if err := r.ParseForm(); err != nil {
-		h.fail(w, r, fmt.Errorf("%w: could not read the form", web.ErrValidation))
-		return
-	}
-	tags, err := h.deps.Store.EnsureTags(ctx, splitTags(r.FormValue("tags")))
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	ids := make([]string, 0, len(tags))
-	for _, t := range tags {
-		ids = append(ids, t.ID)
-	}
-	if _, err := h.deps.Store.SetReceiptTags(ctx, recID, ids); err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	full, err := h.deps.Store.GetReceipt(ctx, recID)
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	h.render(w, http.StatusOK, "tag_chips", full)
+	web.StreamAttachment(w, r, h.deps, att, strings.HasSuffix(r.URL.Path, "/download"))
 }
 
 // ---- helpers ----
+
+// loadShell loads the data both shells need: the filtered list (as cards), the
+// tag counts for the filter UI, and the unfiltered total for the counters.
+func (h *Handler) loadShell(ctx context.Context, q, tag string) (items []listItem, tags []receipt.TagCount, total int, err error) {
+	query := receipt.ReceiptQuery{Text: q}
+	if tag != "" {
+		tagID, terr := h.tagIDByName(ctx, tag)
+		if terr != nil {
+			return nil, nil, 0, terr
+		}
+		// An unknown tag yields no matches rather than ignoring the filter.
+		if tagID == "" {
+			tagID = "\x00unknown"
+		}
+		query.TagIDs = []string{tagID}
+	}
+	receipts, err := h.deps.Store.ListReceipts(ctx, query)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	items, err = h.buildItems(ctx, receipts)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	tags, err = h.deps.Store.TagCounts(ctx)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	total, err = h.deps.Store.CountReceipts(ctx)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	return items, tags, total, nil
+}
+
+func (h *Handler) buildItems(ctx context.Context, receipts []receipt.Receipt) ([]listItem, error) {
+	ids := make([]string, len(receipts))
+	for i := range receipts {
+		ids[i] = receipts[i].ID
+	}
+	sums, err := h.deps.Store.AttachmentSummaries(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]listItem, 0, len(receipts))
+	for i := range receipts {
+		s := sums[receipts[i].ID]
+		items = append(items, listItem{R: receipts[i], Count: s.Count, ImageID: s.FirstImageID})
+	}
+	return items, nil
+}
+
+// redirect tells htmx to navigate to dest, carrying a toast message as ?flash.
+func (h *Handler) redirect(w http.ResponseWriter, dest, msg string) {
+	if msg != "" {
+		dest += "?flash=" + url.QueryEscape(msg)
+	}
+	w.Header().Set("HX-Redirect", dest)
+	w.WriteHeader(http.StatusNoContent)
+}
 
 // saveFiles stores all uploaded files in the "files" field for the given receipt.
 func (h *Handler) saveFiles(ctx context.Context, receiptID string, r *http.Request) error {
@@ -316,32 +391,6 @@ func (h *Handler) purgeObjects(ctx context.Context, keys []string) {
 	}
 }
 
-func (h *Handler) parseQuery(ctx context.Context, r *http.Request) (receipt.ReceiptQuery, error) {
-	v := r.URL.Query()
-	q := receipt.ReceiptQuery{
-		Text:          strings.TrimSpace(v.Get("q")),
-		UploaderEmail: strings.TrimSpace(v.Get("uploader")),
-	}
-	if name := strings.ToLower(strings.TrimSpace(v.Get("tag"))); name != "" {
-		id, err := h.tagIDByName(ctx, name)
-		if err != nil {
-			return receipt.ReceiptQuery{}, err
-		}
-		// An unknown tag yields no matches rather than ignoring the filter.
-		if id == "" {
-			id = "\x00unknown"
-		}
-		q.TagIDs = []string{id}
-	}
-	if from, ok := parseDate(v.Get("from")); ok {
-		q.PurchaseFrom = &from
-	}
-	if to, ok := parseDate(v.Get("to")); ok {
-		q.PurchaseTo = &to
-	}
-	return q, nil
-}
-
 func (h *Handler) tagIDByName(ctx context.Context, name string) (string, error) {
 	tags, err := h.deps.Store.ListTags(ctx)
 	if err != nil {
@@ -355,27 +404,53 @@ func (h *Handler) tagIDByName(ctx context.Context, name string) (string, error) 
 	return "", nil
 }
 
-// parseReceiptFields extracts the editable receipt fields from a form. It does
-// not set ID, timestamps, uploader, or tags.
-func parseReceiptFields(r *http.Request) (*receipt.Receipt, error) {
-	merchant := strings.TrimSpace(r.FormValue("merchant"))
-	if merchant == "" {
-		return nil, fmt.Errorf("%w: merchant is required", web.ErrValidation)
-	}
-	purchase, err := time.Parse("2006-01-02", r.FormValue("purchase_date"))
-	if err != nil {
-		return nil, fmt.Errorf("%w: purchase date must be YYYY-MM-DD", web.ErrValidation)
-	}
-	amountMinor, err := receipt.ParseMoneyMinor(r.FormValue("amount"))
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", web.ErrValidation, err)
-	}
+func searchParams(r *http.Request) (q, tag string) {
+	v := r.URL.Query()
+	return strings.TrimSpace(v.Get("q")), strings.ToLower(strings.TrimSpace(v.Get("tag")))
+}
 
+func flash(r *http.Request) string {
+	return strings.TrimSpace(r.URL.Query().Get("flash"))
+}
+
+func receiptTitle(rec *receipt.Receipt) string {
+	if rec.Title != "" {
+		return rec.Title
+	}
+	if rec.Merchant != "" {
+		return rec.Merchant
+	}
+	return "Receipt"
+}
+
+// parseReceiptFields extracts the editable fields from a form. Only Title is
+// required; merchant and amount may be blank and the date defaults to today.
+// It does not set ID, timestamps, uploader, or tags.
+func parseReceiptFields(r *http.Request) (*receipt.Receipt, error) {
+	title := strings.TrimSpace(r.FormValue("title"))
+	if title == "" {
+		return nil, fmt.Errorf("%w: title is required", web.ErrValidation)
+	}
+	purchase := time.Now().UTC()
+	if v := strings.TrimSpace(r.FormValue("purchase_date")); v != "" {
+		t, err := time.Parse("2006-01-02", v)
+		if err != nil {
+			return nil, fmt.Errorf("%w: purchase date must be YYYY-MM-DD", web.ErrValidation)
+		}
+		purchase = t.UTC()
+	}
+	var amountMinor int64
+	if v := strings.TrimSpace(r.FormValue("amount")); v != "" {
+		minor, err := receipt.ParseMoneyMinor(v)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", web.ErrValidation, err)
+		}
+		amountMinor = minor
+	}
 	return &receipt.Receipt{
-		Title:        strings.TrimSpace(r.FormValue("title")),
-		Description:  strings.TrimSpace(r.FormValue("description")),
-		Merchant:     merchant,
-		PurchaseDate: purchase.UTC(),
+		Title:        title,
+		Merchant:     strings.TrimSpace(r.FormValue("merchant")),
+		PurchaseDate: purchase,
 		Amount:       receipt.Money{AmountMinor: amountMinor, Currency: receipt.DefaultCurrency},
 		Note:         strings.TrimSpace(r.FormValue("note")),
 	}, nil
@@ -393,16 +468,4 @@ func splitTags(s string) []string {
 		out = append(out, t)
 	}
 	return out
-}
-
-func parseDate(s string) (time.Time, bool) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return time.Time{}, false
-	}
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return time.Time{}, false
-	}
-	return t.UTC(), true
 }

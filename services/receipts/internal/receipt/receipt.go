@@ -66,6 +66,21 @@ type Tag struct {
 	Name string
 }
 
+// TagCount is a tag with how many receipts carry it. Used by the tag-filter
+// sidebar to show per-tag totals.
+type TagCount struct {
+	Tag
+	Count int
+}
+
+// AttachmentSummary is a per-receipt attachment rollup for rendering list cards
+// without hydrating every attachment: the total count plus the first image
+// (if any) to use as the card thumbnail.
+type AttachmentSummary struct {
+	Count        int
+	FirstImageID string // empty when the receipt has no image attachment
+}
+
 // Attachment is file metadata; the bytes live in the object store under ObjectKey.
 type Attachment struct {
 	ID          string

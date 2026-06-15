@@ -1,0 +1,174 @@
+{{/* ---- Receipt card (shared by both shells) ---- */}}
+{{define "card"}}{{$it := .It}}{{if .Desktop -}}
+<div class="card{{if .Active}} active{{end}}" data-card data-id="{{$it.R.ID}}"
+     hx-get="/fragments/detail?id={{$it.R.ID}}" hx-target="#d-detail" hx-swap="innerHTML" hx-push-url="/receipts/{{$it.R.ID}}">
+  {{template "card_inner" $it}}
+</div>
+{{- else -}}
+<a class="card" href="/receipts/{{$it.R.ID}}">
+  {{template "card_inner" $it}}
+</a>
+{{- end}}{{end}}
+
+{{define "card_inner"}}
+<div class="tmb">
+  {{if .ImageID}}<img src="/receipts/{{.R.ID}}/attachments/{{.ImageID}}" alt="" loading="lazy">
+  {{else if gt .Count 0}}{{template "ico-doc"}}
+  {{else}}{{.R.Title | initial}}{{end}}
+</div>
+<div class="meta">
+  <div class="nm">{{if .R.Title}}{{.R.Title}}{{else}}Untitled{{end}}</div>
+  <div class="mc">{{if .R.Merchant}}{{.R.Merchant}}{{else}}No merchant{{end}} · {{.R.PurchaseDate | dateShort}}</div>
+  {{if gt .Count 0}}<span class="badge">{{template "ico-doc"}} {{.Count}} file{{if ne .Count 1}}s{{end}}</span>{{end}}
+</div>
+<div class="amt"><b>{{.R.Amount | amount}}</b><small>SEK</small></div>
+{{end}}
+
+{{/* ---- Swappable list results (count + cards, or empty state) ---- */}}
+{{define "list_results"}}{{if not .Items -}}
+<div class="empty">
+  {{template "ico-search-lg"}}
+  <b>Nothing found</b>
+  <p>{{if eq .Total 0}}Add your first receipt to start your archive.{{else}}Try a different word or clear the filter.{{end}}</p>
+</div>
+{{- else -}}
+<div class="count">{{len .Items}} result{{if ne (len .Items) 1}}s{{end}}{{if and .Desktop .ActiveTag}} · {{.ActiveTag}}{{end}}</div>
+<div class="list">
+  {{range .Items}}{{template "card" dict "It" . "Desktop" $.Desktop "Active" (and $.Desktop (eq .R.ID $.SelID))}}{{end}}
+</div>
+{{- end}}{{end}}
+
+{{/* ---- Detail body: gallery + hero + facts + notes (shared) ---- */}}
+{{define "detail_body"}}
+<div class="gallery">
+  {{if .Attachments}}{{range .Attachments}}
+    <div class="g">
+      {{if .IsImage}}<img src="/receipts/{{.ReceiptID}}/attachments/{{.ID}}" alt="{{.Filename}}">
+      {{else}}<div class="pdf">{{template "ico-doc"}}<a href="/receipts/{{.ReceiptID}}/attachments/{{.ID}}" target="_blank" rel="noreferrer">Open PDF</a></div>{{end}}
+    </div>
+  {{end}}{{else}}
+    <div class="g none">{{template "ico-image"}}<span style="font-size:12px">No file attached</span></div>
+  {{end}}
+</div>
+<div class="dhero">
+  <div class="t">{{if .Title}}{{.Title}}{{else}}Untitled{{end}}</div>
+  <div class="price">{{.Amount | amount}} <small>kr</small></div>
+</div>
+<div class="facts">
+  <div class="fact">{{template "ico-shop"}}<span class="k">Merchant</span><span class="v">{{if .Merchant}}{{.Merchant}}{{else}}—{{end}}</span></div>
+  <div class="fact">{{template "ico-cal"}}<span class="k">Purchased</span><span class="v">{{.PurchaseDate | dateShort}}</span></div>
+  {{if .Tags}}<div class="fact fact-tags">{{template "ico-tag"}}<span class="k">Tags</span><span class="v dtags">{{range .Tags}}<span class="t">{{.Name}}</span>{{end}}</span></div>{{end}}
+</div>
+{{if .Note}}<div class="notes"><div class="lbl">Notes &amp; context</div><p>{{.Note}}</p></div>{{end}}
+{{end}}
+
+{{/* ---- Desktop detail pane (toolbar + body) ---- */}}
+{{define "detail_pane_inner"}}
+<div class="dtoolbar">
+  <button class="tbtn accent" type="button" hx-get="/fragments/modal?mode=edit&id={{.ID}}" hx-target="#d-modal" hx-swap="innerHTML">{{template "ico-pencil"}} Edit</button>
+  <button class="tbtn danger" type="button" hx-get="/fragments/confirm?shell=desktop&id={{.ID}}" hx-target="#d-modal" hx-swap="innerHTML">{{template "ico-trash"}} Delete</button>
+</div>
+<div class="dwrap fade-in">
+  {{template "detail_body" .}}
+</div>
+{{end}}
+
+{{define "detail_empty"}}
+<div class="dempty">{{template "ico-doc-lg"}}<b>Select a receipt</b><p>Pick an item from the list to see its files, details and notes — or add a new one.</p></div>
+{{end}}
+
+{{/* ---- Receipt form fields (shared by add & edit; R is the receipt or nil) ---- */}}
+{{define "form_fields"}}{{$r := .R}}
+<div class="form">
+  <div class="fld">
+    <label>Title</label>
+    <input class="in" name="title" placeholder="e.g. Robot lawnmower" value="{{with $r}}{{.Title}}{{end}}" data-title autocomplete="off">
+  </div>
+  <div class="row">
+    <div class="fld">
+      <label>Merchant</label>
+      <input class="in" name="merchant" placeholder="Bauhaus" value="{{with $r}}{{.Merchant}}{{end}}" autocomplete="off">
+    </div>
+    <div class="fld">
+      <label>Amount</label>
+      <div class="amount-wrap">
+        <input class="in" name="amount" placeholder="0" inputmode="decimal" value="{{with $r}}{{.Amount | amountValue}}{{end}}">
+        <span class="cur">kr</span>
+      </div>
+    </div>
+  </div>
+  <div class="fld">
+    <label>Date of purchase</label>
+    <input class="in" type="date" name="purchase_date" value="{{with $r}}{{.PurchaseDate | date}}{{else}}{{today}}{{end}}">
+  </div>
+  {{template "tag_editor" dict "R" $r}}
+  <div class="fld">
+    <label>Notes &amp; context</label>
+    <textarea name="note" placeholder="Serial number, where it's installed, warranty length, anything useful later…">{{with $r}}{{.Note}}{{end}}</textarea>
+  </div>
+</div>
+{{end}}
+
+{{/* ---- Tag chip editor (managed by app.js, submits a CSV in name=tags) ---- */}}
+{{define "tag_editor"}}{{$r := .R}}
+<div class="fld">
+  <label>Tags</label>
+  <div class="tagbox" data-tageditor>
+    {{with $r}}{{range .Tags}}<span class="tagchip" data-tag="{{.Name}}">{{.Name}}<button type="button" data-removetag aria-label="Remove tag">{{template "ico-x"}}</button></span>{{end}}{{end}}
+    <input type="text" data-taginput placeholder="garden, tools, warranty…" autocomplete="off">
+    <input type="hidden" name="tags" value="{{with $r}}{{.Tags | tagsCSV}}{{end}}" data-tagcsv>
+  </div>
+</div>
+{{end}}
+
+{{/* ---- Capture zone: ADD mode stages files client-side until save ---- */}}
+{{define "capture_add"}}
+<div class="capwrap">
+  <div class="cap" data-capture>
+    {{template "ico-camera-lg"}}
+    <b data-capprompt>Snap a photo or add a PDF</b>
+    <span>Receipt, warranty card, manual…</span>
+    <div class="btns">
+      <button type="button" data-pick="camera">{{template "ico-camera"}} Take photo</button>
+      <button type="button" data-pick="upload">{{template "ico-upload"}} Upload file</button>
+    </div>
+    <div class="thumbs" data-thumbs></div>
+  </div>
+  <input type="file" name="files" accept="image/*,application/pdf" multiple hidden data-files>
+  <input type="file" accept="image/*" capture="environment" hidden data-camera>
+</div>
+{{end}}
+
+{{/* ---- Capture zone: EDIT mode uploads immediately and removes server-side ---- */}}
+{{define "capture_edit"}}
+<div class="capwrap">
+  <form class="cap" data-capture-edit hx-post="/receipts/{{.ID}}/attachments" hx-encoding="multipart/form-data"
+        hx-target="#edit-thumbs-{{.ID}}" hx-swap="outerHTML" hx-trigger="change from:input[type=file]"
+        hx-on::after-request="this.querySelectorAll('input[type=file]').forEach(function(i){i.value=''})">
+    {{template "ico-camera-lg"}}
+    <b>Add another file</b>
+    <span>Receipt, warranty card, manual…</span>
+    <div class="btns">
+      <button type="button" data-pick-edit="camera">{{template "ico-camera"}} Take photo</button>
+      <button type="button" data-pick-edit="upload">{{template "ico-upload"}} Upload file</button>
+    </div>
+    <input type="file" name="files" accept="image/*,application/pdf" multiple hidden data-edit-upload>
+    <input type="file" name="files" accept="image/*" capture="environment" hidden data-edit-camera>
+    {{template "edit_thumbs" .}}
+  </form>
+</div>
+{{end}}
+
+{{define "edit_thumbs"}}
+<div class="thumbs" id="edit-thumbs-{{.ID}}">
+  {{range .Attachments}}
+    <div class="thumb">
+      {{if .IsImage}}<img src="/receipts/{{.ReceiptID}}/attachments/{{.ID}}" alt="{{.Filename}}">
+      {{else}}<div class="pdf">{{template "ico-doc"}}<small>PDF</small></div>{{end}}
+      <button class="rm" type="button" aria-label="Remove file"
+        hx-delete="/receipts/{{.ReceiptID}}/attachments/{{.ID}}" hx-target="#edit-thumbs-{{.ReceiptID}}" hx-swap="outerHTML"
+        hx-confirm="Remove this file?">{{template "ico-x"}}</button>
+    </div>
+  {{end}}
+</div>
+{{end}}

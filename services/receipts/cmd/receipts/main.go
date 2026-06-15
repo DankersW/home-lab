@@ -108,7 +108,7 @@ func buildHandler(cfg config.Config, deps web.Deps, logger *slog.Logger) http.Ha
 	root.Handle("GET /static/", ui.StaticHandler())
 	root.Handle("/", authed)
 
-	return web.Recover(logger, web.RequestLog(logger, root))
+	return web.Recover(logger, web.RequestLog(logger, web.SecurityHeaders(root)))
 }
 
 func serve(srv *http.Server, logger *slog.Logger) error {

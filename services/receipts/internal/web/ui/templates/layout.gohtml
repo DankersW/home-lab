@@ -1,27 +1,25 @@
-{{define "header"}}<!doctype html>
+{{define "page"}}<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{{.Title}} · Receipts</title>
   <link rel="icon" type="image/png" href="/static/receipt.png">
-  <link rel="stylesheet" href="/static/pico.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
 </head>
 <body>
-<nav class="container">
-  <ul><li><strong><a href="/">Receipts</a></strong></li></ul>
-  <ul><li><small>{{.User.Email}}</small></li></ul>
-</nav>
-<div id="flash" class="container"></div>
-<main class="container">
-{{end}}
-
-{{define "footer"}}
-</main>
+<div id="flash" aria-live="polite"></div>
+{{template "mobile_shell" .}}
+{{template "desktop_shell" .}}
 </body>
 </html>
 {{end}}
 
-{{define "flash_error"}}<div id="flash" class="container" hx-swap-oob="true"><p class="error" role="alert">{{.}}</p></div>{{end}}
+{{define "toast"}}<div class="toast{{if .}} show{{end}}" data-toast role="status">{{template "ico-check"}} <span>{{.}}</span></div>{{end}}
+
+{{define "flash_error"}}<div id="flash" hx-swap-oob="true"><div class="flash-error" role="alert"><span>{{.}}</span><button type="button" class="flash-x" data-flashclose aria-label="Dismiss">{{template "ico-x"}}</button></div></div>{{end}}

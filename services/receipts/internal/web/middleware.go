@@ -20,6 +20,22 @@ func Recover(logger *slog.Logger, next http.Handler) http.Handler {
 	})
 }
 
+// SecurityHeaders sets conservative hardening headers on every response. It
+// deliberately omits a script/style Content-Security-Policy: htmx's hx-on
+// attributes and the Google Fonts <link>s would break under one, and the app is
+// already behind Cloudflare Access. It locks framing (clickjacking), MIME
+// sniffing, and referrer leakage, none of which affect functionality.
+func SecurityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		h.Set("Content-Security-Policy", "frame-ancestors 'none'")
+		next.ServeHTTP(w, r)
+	})
+}
+
 // MaxBytes caps the request body to guard against runaway uploads.
 func MaxBytes(limit int64, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

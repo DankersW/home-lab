@@ -23,15 +23,18 @@ type Store interface {
 	UpdateReceipt(ctx context.Context, r *receipt.Receipt) error
 	DeleteReceipt(ctx context.Context, id string) (objectKeys []string, err error)
 	ListReceipts(ctx context.Context, q receipt.ReceiptQuery) ([]receipt.Receipt, error)
+	CountReceipts(ctx context.Context) (int, error)
 	ExportAll(ctx context.Context) (receipt.Export, error)
 
 	Attach(ctx context.Context, a *receipt.Attachment) error
 	Detach(ctx context.Context, attachmentID string) (objectKey string, err error)
 	GetAttachment(ctx context.Context, receiptID, attID string) (*receipt.Attachment, error)
 	ListAttachments(ctx context.Context, receiptID string) ([]receipt.Attachment, error)
+	AttachmentSummaries(ctx context.Context, receiptIDs []string) (map[string]receipt.AttachmentSummary, error)
 
 	EnsureTags(ctx context.Context, names []string) ([]receipt.Tag, error)
 	ListTags(ctx context.Context) ([]receipt.Tag, error)
+	TagCounts(ctx context.Context) ([]receipt.TagCount, error)
 	DeleteTag(ctx context.Context, id string) error
 	SetReceiptTags(ctx context.Context, receiptID string, tagIDs []string) ([]receipt.Tag, error)
 

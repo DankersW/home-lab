@@ -1,0 +1,96 @@
+{{define "mobile_shell"}}
+<div class="scene mobile-only">
+  <div class="app">
+    {{if eq .Screen "add"}}{{template "m_add" .}}
+    {{else if eq .Screen "list"}}{{template "m_list" .}}
+    {{else if eq .Screen "detail"}}{{template "m_detail" .}}
+    {{else if eq .Screen "edit"}}{{template "m_edit" .}}{{end}}
+    <div id="m-overlay"></div>
+    {{template "toast" .Flash}}
+  </div>
+</div>
+{{end}}
+
+{{define "m_add"}}
+<div class="screen fade-in">
+  <div class="bar">
+    <span class="mark">{{template "ico-doc"}}</span>
+    <div><h1>New receipt</h1><p class="sub">Add it now, find it later</p></div>
+  </div>
+  <div class="body">
+    <form id="m-add-form" hx-post="/receipts" hx-encoding="multipart/form-data" hx-swap="none">
+      <input type="hidden" name="origin" value="mobile">
+      {{template "capture_add" .}}
+      {{template "form_fields" dict}}
+    </form>
+  </div>
+  <div class="footer split">
+    <a class="btn btn-ghost" href="/list">{{template "ico-search"}} Find a receipt</a>
+    <button class="btn btn-primary" type="submit" form="m-add-form" data-save disabled>{{template "ico-check"}} Save</button>
+  </div>
+</div>
+{{end}}
+
+{{define "m_list"}}
+<div class="screen fade-in">
+  <div class="bar">
+    <div><h1>Your receipts</h1><p class="sub">{{.Total}} item{{if ne .Total 1}}s{{end}} on file</p></div>
+    <a class="iconbtn" href="/" aria-label="Add receipt">{{template "ico-plus"}}</a>
+  </div>
+  <form data-filterform hx-on:submit="event.preventDefault()">
+    <input type="hidden" name="shell" value="mobile">
+    <input type="hidden" name="tag" value="{{.ActiveTag}}" data-tagfilter>
+    <div class="searchbar">
+      {{template "ico-search"}}
+      <input type="search" name="q" value="{{.Query}}" placeholder="Search title, store, tag, notes…" aria-label="Search receipts" data-search
+        hx-get="/fragments/list" hx-target="#m-results" hx-swap="innerHTML"
+        hx-trigger="input changed delay:200ms, search, filterchange" hx-include="closest form">
+      <button class="clear" type="button" data-clearsearch aria-label="Clear search"{{if not .Query}} hidden{{end}}>{{template "ico-x"}}</button>
+    </div>
+  </form>
+  {{if .Tags}}
+  <div class="filters">
+    <button class="fchip{{if not .ActiveTag}} on{{end}}" type="button" data-tagchip="">All</button>
+    {{range .Tags}}<button class="fchip{{if eq .Name $.ActiveTag}} on{{end}}" type="button" data-tagchip="{{.Name}}">{{.Name}}</button>{{end}}
+  </div>
+  {{end}}
+  <div class="body" id="m-results">
+    {{template "list_results" dict "Items" .Items "Total" .Total "ActiveTag" .ActiveTag "Desktop" false "SelID" ""}}
+  </div>
+</div>
+{{end}}
+
+{{define "m_detail"}}{{with .Selected}}
+<div class="screen fade-in">
+  <div class="shead">
+    <a class="iconbtn ghost" href="/list" aria-label="Back">{{template "ico-back"}}</a>
+    <div class="spacer"></div>
+    <a class="iconbtn" href="/receipts/{{.ID}}/edit" aria-label="Edit">{{template "ico-pencil"}}</a>
+    <button class="iconbtn danger" type="button" aria-label="Delete"
+      hx-get="/fragments/confirm?shell=mobile&id={{.ID}}" hx-target="#m-overlay" hx-swap="innerHTML">{{template "ico-trash"}}</button>
+  </div>
+  <div class="body">
+    {{template "detail_body" .}}
+    <div style="height:12px"></div>
+  </div>
+</div>
+{{end}}{{end}}
+
+{{define "m_edit"}}{{with .Selected}}
+<div class="screen fade-in">
+  <div class="shead">
+    <a class="iconbtn ghost" href="/receipts/{{.ID}}" aria-label="Cancel">{{template "ico-back"}}</a>
+    <h2>Edit receipt</h2>
+  </div>
+  <div class="body">
+    {{template "capture_edit" .}}
+    <form id="m-edit-fields-{{.ID}}" hx-put="/receipts/{{.ID}}" hx-swap="none">
+      {{template "form_fields" dict "R" .}}
+    </form>
+  </div>
+  <div class="footer split">
+    <a class="btn btn-soft" href="/receipts/{{.ID}}">Cancel</a>
+    <button class="btn btn-primary" type="submit" form="m-edit-fields-{{.ID}}" data-save>{{template "ico-check"}} Save changes</button>
+  </div>
+</div>
+{{end}}{{end}}

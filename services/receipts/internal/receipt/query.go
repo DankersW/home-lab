@@ -9,7 +9,7 @@ const DefaultLimit = 500
 // everything (newest first). Pointer and slice fields are optional filters;
 // nil/empty means "no constraint on this dimension".
 type ReceiptQuery struct {
-	Text           string     // substring match over title, merchant, note
+	Text           string     // every whitespace-separated token must match (case-insensitive) somewhere in title, merchant, note, or a tag name
 	TagIDs         []string   // receipts carrying ALL of these tags
 	PurchaseFrom   *time.Time // inclusive lower bound on purchase date
 	PurchaseTo     *time.Time // inclusive upper bound

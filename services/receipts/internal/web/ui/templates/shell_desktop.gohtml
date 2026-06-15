@@ -1,0 +1,43 @@
+{{define "desktop_shell"}}{{$sel := ""}}{{with .Selected}}{{$sel = .ID}}{{end}}
+<div class="web desktop-only">
+  <aside class="dnav">
+    <div class="dbrand">
+      <span class="mark">{{template "ico-doc"}}</span>
+      <div><h1>Receipts</h1><div class="sub">Household archive</div></div>
+    </div>
+    <button class="btn btn-primary" type="button" hx-get="/fragments/modal?mode=add" hx-target="#d-modal" hx-swap="innerHTML">{{template "ico-plus"}} New receipt</button>
+    <div class="dfilters">
+      <div class="lbl">Filter by tag</div>
+      <button class="dfilt{{if not .ActiveTag}} on{{end}}" type="button" data-tagchip=""><span>All receipts</span><span class="n">{{.Total}}</span></button>
+      {{range .Tags}}<button class="dfilt{{if eq .Name $.ActiveTag}} on{{end}}" type="button" data-tagchip="{{.Name}}"><span>{{.Name}}</span><span class="n">{{.Count}}</span></button>{{end}}
+    </div>
+    <div class="foot">Stored on this device · {{.Total}} item{{if ne .Total 1}}s{{end}}</div>
+  </aside>
+
+  <section class="dlist">
+    <div class="top">
+      <form data-filterform hx-on:submit="event.preventDefault()">
+        <input type="hidden" name="shell" value="desktop">
+        <input type="hidden" name="tag" value="{{.ActiveTag}}" data-tagfilter>
+        <div class="searchbar">
+          {{template "ico-search"}}
+          <input type="search" name="q" value="{{.Query}}" placeholder="Search title, store, tag, notes…" aria-label="Search receipts" data-search
+            hx-get="/fragments/list" hx-target="#d-results" hx-swap="innerHTML"
+            hx-trigger="input changed delay:200ms, search, filterchange" hx-include="closest form">
+          <button class="clear" type="button" data-clearsearch aria-label="Clear search"{{if not .Query}} hidden{{end}}>{{template "ico-x"}}</button>
+        </div>
+      </form>
+    </div>
+    <div class="dlistscroll" id="d-results">
+      {{template "list_results" dict "Items" .Items "Total" .Total "ActiveTag" .ActiveTag "Desktop" true "SelID" $sel}}
+    </div>
+  </section>
+
+  <main class="ddetail" id="d-detail">
+    {{if .Selected}}{{template "detail_pane_inner" .Selected}}{{else}}{{template "detail_empty"}}{{end}}
+  </main>
+
+  <div id="d-modal"></div>
+  {{template "toast" .Flash}}
+</div>
+{{end}}

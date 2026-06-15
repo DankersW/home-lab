@@ -33,6 +33,10 @@ const dsnFmt = "file:%s?" +
 const selectReceiptCols = `SELECT id, title, description, merchant, purchase_date,
 	amount_minor, currency, note, uploader_email, created_at, updated_at`
 
+// likeEscaper escapes the LIKE wildcards (and the escape char itself) in a search
+// token so it matches literally. Used with an `ESCAPE '\'` clause.
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
 // Open opens (creating if needed) the database at path, applies all embedded
 // migrations, and returns a ready repository.
 func Open(ctx context.Context, path string) (*DB, error) {
@@ -182,10 +186,16 @@ func (d *DB) ListReceipts(ctx context.Context, q receipt.ReceiptQuery) ([]receip
 	sb.WriteString(selectReceiptCols + ` FROM receipts r WHERE 1=1`)
 	var args []any
 
-	if q.Text != "" {
-		sb.WriteString(` AND (r.title LIKE ? OR r.merchant LIKE ? OR r.note LIKE ?)`)
-		like := "%" + q.Text + "%"
-		args = append(args, like, like, like)
+	// Every whitespace-separated token must match somewhere in the title,
+	// merchant, note, or a tag name (LIKE is case-insensitive for ASCII). Tokens
+	// are treated as literal substrings: LIKE metacharacters are escaped so a
+	// user typing "%" or "_" does not match as a wildcard.
+	for _, tok := range strings.Fields(q.Text) {
+		sb.WriteString(` AND (r.title LIKE ? ESCAPE '\' OR r.merchant LIKE ? ESCAPE '\' OR r.note LIKE ? ESCAPE '\'` +
+			` OR EXISTS (SELECT 1 FROM receipt_tags rt JOIN tags t ON t.id = rt.tag_id` +
+			` WHERE rt.receipt_id = r.id AND t.name LIKE ? ESCAPE '\'))`)
+		like := "%" + likeEscaper.Replace(tok) + "%"
+		args = append(args, like, like, like, like)
 	}
 	if len(q.TagIDs) > 0 {
 		sb.WriteString(` AND r.id IN (SELECT receipt_id FROM receipt_tags WHERE tag_id IN (`)
@@ -246,6 +256,17 @@ func (d *DB) ListReceipts(ctx context.Context, q receipt.ReceiptQuery) ([]receip
 		out = append(out, *r)
 	}
 	return out, rows.Err()
+}
+
+// CountReceipts returns the total number of receipts, ignoring any filter. It is
+// a cheap COUNT(*) used for the UI counters, which must stay accurate beyond the
+// list query's DefaultLimit.
+func (d *DB) CountReceipts(ctx context.Context) (int, error) {
+	var n int
+	if err := d.sql.QueryRowContext(ctx, `SELECT COUNT(*) FROM receipts`).Scan(&n); err != nil {
+		return 0, fmt.Errorf("sqlite: count receipts: %w", err)
+	}
+	return n, nil
 }
 
 // ExportAll returns a portable dump of all receipts with tags (by name) and
@@ -349,6 +370,51 @@ func (d *DB) ListAttachments(ctx context.Context, receiptID string) ([]receipt.A
 	return out, rows.Err()
 }
 
+// AttachmentSummaries returns a per-receipt rollup (count + first image) for the
+// given receipt IDs in a single query, so list cards render without hydrating
+// every attachment. Receipts with no attachments are absent from the map.
+func (d *DB) AttachmentSummaries(ctx context.Context, receiptIDs []string) (map[string]receipt.AttachmentSummary, error) {
+	out := make(map[string]receipt.AttachmentSummary, len(receiptIDs))
+	if len(receiptIDs) == 0 {
+		return out, nil
+	}
+	var sb strings.Builder
+	sb.WriteString(`
+		SELECT a.receipt_id, COUNT(*),
+			(SELECT i.id FROM attachments i
+			 WHERE i.receipt_id = a.receipt_id AND i.kind = 'image'
+			 ORDER BY i.created_at LIMIT 1)
+		FROM attachments a WHERE a.receipt_id IN (`)
+	args := make([]any, 0, len(receiptIDs))
+	for i, rid := range receiptIDs {
+		if i > 0 {
+			sb.WriteString(",")
+		}
+		sb.WriteString("?")
+		args = append(args, rid)
+	}
+	sb.WriteString(`) GROUP BY a.receipt_id`)
+
+	rows, err := d.sql.QueryContext(ctx, sb.String(), args...)
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: attachment summaries: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var (
+			receiptID string
+			count     int
+			firstImg  sql.NullString
+		)
+		if err := rows.Scan(&receiptID, &count, &firstImg); err != nil {
+			return nil, fmt.Errorf("sqlite: scan attachment summary: %w", err)
+		}
+		out[receiptID] = receipt.AttachmentSummary{Count: count, FirstImageID: firstImg.String}
+	}
+	return out, rows.Err()
+}
+
 // ---- Tags ----
 
 // EnsureTags normalizes names (lower + trim), upserts each, and returns the
@@ -400,6 +466,32 @@ func (d *DB) ListTags(ctx context.Context) ([]receipt.Tag, error) {
 			return nil, fmt.Errorf("sqlite: scan tag: %w", err)
 		}
 		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// TagCounts returns every tag with the number of receipts carrying it, ordered
+// by frequency (most-used first), then name. Tags with no receipts are included
+// with a count of zero.
+func (d *DB) TagCounts(ctx context.Context) ([]receipt.TagCount, error) {
+	rows, err := d.sql.QueryContext(ctx, `
+		SELECT t.id, t.name, COUNT(rt.receipt_id)
+		FROM tags t
+		LEFT JOIN receipt_tags rt ON rt.tag_id = t.id
+		GROUP BY t.id, t.name
+		ORDER BY COUNT(rt.receipt_id) DESC, t.name`)
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: tag counts: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var out []receipt.TagCount
+	for rows.Next() {
+		var tc receipt.TagCount
+		if err := rows.Scan(&tc.ID, &tc.Name, &tc.Count); err != nil {
+			return nil, fmt.Errorf("sqlite: scan tag count: %w", err)
+		}
+		out = append(out, tc)
 	}
 	return out, rows.Err()
 }

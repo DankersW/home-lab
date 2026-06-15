@@ -1,0 +1,64 @@
+{{/* Desktop form modal (add / edit). On save the server returns an HX-Redirect,
+     so the page reloads with the receipt selected and the modal gone. */}}
+{{define "form_modal"}}{{$edit := eq .Mode "edit"}}
+<div class="modal-bg" data-backdrop>
+  <div class="modal">
+    <div class="mhead">
+      <h2>{{if $edit}}Edit receipt{{else}}New receipt{{end}}</h2>
+      <button class="iconbtn ghost" type="button" data-closemodal aria-label="Close">{{template "ico-x"}}</button>
+    </div>
+    {{if $edit}}{{with .Receipt}}
+    <div class="mbody">
+      {{template "capture_edit" .}}
+      <form id="modal-fields-{{.ID}}" hx-put="/receipts/{{.ID}}" hx-swap="none">
+        {{template "form_fields" dict "R" .}}
+      </form>
+    </div>
+    <div class="footer split">
+      <button class="btn btn-soft" type="button" data-closemodal>Cancel</button>
+      <button class="btn btn-primary" type="submit" form="modal-fields-{{.ID}}" data-save>{{template "ico-check"}} Save changes</button>
+    </div>
+    {{end}}{{else}}
+    <form id="modal-add" hx-post="/receipts" hx-encoding="multipart/form-data" hx-swap="none">
+      <input type="hidden" name="origin" value="desktop">
+      <div class="mbody">
+        {{template "capture_add" .}}
+        {{template "form_fields" dict}}
+      </div>
+      <div class="footer split">
+        <button class="btn btn-soft" type="button" data-closemodal>Cancel</button>
+        <button class="btn btn-primary" type="submit" data-save disabled>{{template "ico-check"}} Save receipt</button>
+      </div>
+    </form>
+    {{end}}
+  </div>
+</div>
+{{end}}
+
+{{/* Delete confirm. Desktop renders a centered modal (into #d-modal); mobile a
+     bottom sheet (into #m-overlay). */}}
+{{define "confirm"}}{{with .Receipt}}{{if $.Desktop}}
+<div class="modal-bg" data-backdrop>
+  <div class="modal confirm">
+    <div class="mbody confirm-body">
+      <h3 class="confirm-title">Delete this receipt?</h3>
+      <p class="confirm-copy">“{{if .Title}}{{.Title}}{{else}}Untitled{{end}}” and its files will be removed. This can't be undone.</p>
+    </div>
+    <div class="footer split">
+      <button class="btn btn-soft" type="button" data-closemodal>Keep it</button>
+      <button class="btn btn-danger" type="button" hx-delete="/receipts/{{.ID}}">{{template "ico-trash"}} Delete</button>
+    </div>
+  </div>
+</div>
+{{else}}
+<div class="sheet-bg" data-backdrop>
+  <div class="sheet">
+    <h3>Delete this receipt?</h3>
+    <p>“{{if .Title}}{{.Title}}{{else}}Untitled{{end}}” and its files will be removed. This can't be undone.</p>
+    <div class="acts">
+      <button class="btn btn-danger" type="button" hx-delete="/receipts/{{.ID}}">{{template "ico-trash"}} Delete receipt</button>
+      <button class="btn btn-soft" type="button" data-closemodal>Keep it</button>
+    </div>
+  </div>
+</div>
+{{end}}{{end}}{{end}}

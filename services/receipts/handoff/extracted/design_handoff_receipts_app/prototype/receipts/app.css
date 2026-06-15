@@ -1,6 +1,4 @@
-/* Receipts app — Ink & Coral base, amber-orange accent (#EA580C).
-   Ported from the design handoff prototype. The mobile phone-column shell shows
-   below 960px; the desktop three-pane shell shows at >= 960px. */
+/* Receipts app — Ink & Coral base, amber-orange accent (#EA580C) */
 :root{
   --bg:#FFFFFF; --surface:#FAFAFA; --surface2:#F4F4F2;
   --text:#141414; --muted:#8A8A8A; --faint:#B5B5B5;
@@ -15,9 +13,6 @@
 html,body{margin:0;height:100%}
 body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-
-/* base icon: sized per context below, scales via viewBox */
-.ico{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:none;vertical-align:middle}
 
 /* ---- App shell: phone column, centered on desktop ---- */
 .scene{min-height:100%;display:flex;align-items:stretch;justify-content:center;
@@ -43,7 +38,7 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
 .bar .iconbtn{margin-left:auto}
 .iconbtn{width:38px;height:38px;border-radius:11px;border:1px solid var(--border2);background:var(--bg);
   color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;
-  text-decoration:none;transition:background .15s,border-color .15s}
+  transition:background .15s,border-color .15s}
 .iconbtn:hover{background:var(--surface)}
 .iconbtn .ico{width:19px;height:19px}
 .iconbtn.ghost{border:0;background:transparent}
@@ -102,7 +97,7 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
   border-radius:8px;padding:5px 8px;font-size:12.5px;font-weight:700}
 .tagchip button{border:0;background:transparent;color:var(--accent-press);cursor:pointer;display:flex;padding:0}
 .tagchip .ico{width:12px;height:12px}
-.tagbox input[type=text]{border:0;outline:none;background:transparent;font-family:var(--fb);font-size:14px;color:var(--text);
+.tagbox input{border:0;outline:none;background:transparent;font-family:var(--fb);font-size:14px;color:var(--text);
   flex:1;min-width:90px;padding:4px 2px}
 .tagbox input::placeholder{color:var(--faint)}
 
@@ -110,7 +105,7 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
 .footer{padding:12px 18px;background:var(--bg);border-top:1px solid var(--border)}
 .footer.split{display:flex;gap:11px}
 .btn{width:100%;border:0;border-radius:14px;padding:15px;font-size:15px;font-weight:700;font-family:var(--fb);
-  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;text-decoration:none;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;
   transition:background .15s,transform .05s,opacity .15s}
 .btn:active{transform:translateY(1px)}
 .btn .ico{width:18px;height:18px}
@@ -144,7 +139,7 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
 .count{padding:0 20px 8px;font-size:11.5px;color:var(--muted);font-weight:600}
 .list{padding:0 14px 16px;display:flex;flex-direction:column;gap:10px}
 .card{display:flex;align-items:center;gap:13px;background:var(--bg);border:1px solid var(--border);border-radius:16px;
-  padding:11px 13px;cursor:pointer;color:inherit;text-decoration:none;transition:border-color .15s,box-shadow .15s,transform .05s}
+  padding:11px 13px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .05s}
 .card:hover{border-color:var(--border2);box-shadow:var(--shadow)}
 .card:active{transform:scale(.995)}
 .tmb{width:50px;height:50px;border-radius:12px;flex:none;overflow:hidden;background:var(--surface2);
@@ -152,10 +147,10 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
 .tmb img{width:100%;height:100%;object-fit:cover}
 .tmb .ico{width:22px;height:22px}
 .card .meta{flex:1;min-width:0}
-.card .nm{font-weight:700;font-size:14.5px;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.card .nm{font-weight:700;font-size:14.5px;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .mc{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .amt{text-align:right;flex:none}
-.card .amt b{font-family:var(--fh);font-weight:800;font-size:14.5px;color:var(--text)}
+.card .amt b{font-family:var(--fh);font-weight:800;font-size:14.5px}
 .card .amt small{display:block;font-size:9px;color:var(--faint);font-weight:700;letter-spacing:.5px}
 .card .badge{font-size:9px;font-weight:700;color:var(--muted);display:inline-flex;align-items:center;gap:3px;margin-top:3px}
 .card .badge .ico{width:11px;height:11px}
@@ -186,7 +181,6 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
 
 .facts{padding:12px 20px 0;display:flex;flex-direction:column}
 .fact{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--border)}
-.fact.fact-tags{align-items:flex-start}
 .fact .ico{width:18px;height:18px;color:var(--accent);flex:none}
 .fact .k{font-size:12px;color:var(--muted);width:84px;flex:none}
 .fact .v{font-size:14px;font-weight:600;color:var(--text)}
@@ -217,8 +211,8 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
 .fade-in{animation:scrIn .28s ease}
 @keyframes scrIn{from{transform:translateY(7px)}to{transform:none}}
 
-/* ============ DESKTOP WEB SHELL (>=960px) ============ */
-.web{display:grid;grid-template-columns:248px minmax(340px,400px) 1fr;height:100vh;background:var(--bg);color:var(--text);position:relative}
+/* ============ DESKTOP WEB SHELL (≥960px) ============ */
+.web{display:grid;grid-template-columns:248px minmax(340px,400px) 1fr;height:100vh;background:var(--bg);color:var(--text)}
 .card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 
 /* sidebar */
@@ -287,25 +281,6 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
 .modal .mhead{display:flex;align-items:center;gap:10px;padding:18px 14px 16px 22px;border-bottom:1px solid var(--border)}
 .modal .mhead h2{font-family:var(--fh);font-size:19px;font-weight:800;margin:0;flex:1;letter-spacing:-.3px}
 .modal .mhead .iconbtn{margin-left:auto}
-.modal>form{flex:1;display:flex;flex-direction:column;min-height:0}
-.modal .mbody{flex:1;overflow-y:auto;min-height:0}
+.modal .mbody{overflow-y:auto;min-height:0}
 .modal .footer{border-top:1px solid var(--border)}
-.confirm-body{padding:24px 24px 8px}
-.confirm-title{font-family:var(--fh);font-size:19px;margin:0 0 6px;font-weight:800}
-.confirm-copy{font-size:13.5px;color:var(--muted);margin:0;line-height:1.5}
 
-/* ---- responsive shell switch ---- */
-.web{display:none}
-@media(min-width:960px){
-  .scene{display:none}
-  .web{display:grid}
-}
-
-/* ---- validation flash (server-side errors) ---- */
-#flash:empty{display:none}
-.flash-error{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:200;max-width:min(440px,calc(100vw - 32px));
-  display:flex;align-items:center;gap:10px;background:#FEECEC;color:#D7263D;border:1px solid #F0C2C2;
-  border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg)}
-.flash-error span{flex:1}
-.flash-x{border:0;background:transparent;color:#D7263D;cursor:pointer;display:flex;padding:0}
-.flash-x .ico{width:15px;height:15px}
