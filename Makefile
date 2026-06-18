@@ -13,7 +13,7 @@ bootstrap:
 init-secrets:
 	@echo "--- Generating secrets (if needed) ---"
 	@if [ ! -f "infra/secrets/cloudflared_token" ]; then \
-		mkdir -p infra/secrets/cloudflared_token; \
+		touch -p infra/secrets/cloudflared_token; \
 	fi
 	@if [ ! -f "infra/secrets/minio_access_key" ]; then \
 		openssl rand -hex 16 | tr -d '\n' > infra/secrets/minio_access_key; \
