@@ -39,3 +39,9 @@ logs:
 backup:
 	mkdir -p $(BACKUP_DIR)
 	docker compose run --rm -v $(BACKUP_DIR):/backup receipts /usr/local/bin/backup
+
+
+.PHONY: flash
+flash:
+	@[ -n "$(DEVICE)" ] || { echo "usage: make flash DEVICE=/dev/sdX"; exit 1; }
+	bash $(CURDIR)/pi/flash.sh $(DEVICE)

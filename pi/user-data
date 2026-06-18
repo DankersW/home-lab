@@ -1,0 +1,48 @@
+#cloud-config
+
+# mDNS name homelab.local is derived from this hostname by avahi.
+hostname: homelab
+create_hostname_file: true
+
+# Key-only login; password authentication disabled globally.
+ssh_pwauth: false
+
+# No `- default` entry, so the stock `ubuntu` user is never created.
+users:
+  - name: wouter
+    gecos: Wouter
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+    groups: [sudo]
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJyi6J006Hp0a709YI5w4LjcgXYRK1Izo7wrqqSPQjtz wouter.dankers@skynet.be"
+
+# Refresh the apt index for the installs below; skip the upgrade to keep first
+# boot fast. Run `sudo apt full-upgrade` manually after the first SSH instead.
+package_update: true
+packages:
+  - avahi-daemon
+  - ca-certificates
+  - curl
+
+# Docker CE + compose plugin from Docker's official apt repo, pinned to
+# noble/arm64. The docker group is created by the package; wouter is added to
+# it afterwards, which takes effect on the first (fresh) login.
+runcmd:
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - |
+    cat > /etc/apt/sources.list.d/docker.sources <<'EOF'
+    Types: deb
+    URIs: https://download.docker.com/linux/ubuntu
+    Suites: noble
+    Components: stable
+    Architectures: arm64
+    Signed-By: /etc/apt/keyrings/docker.asc
+    EOF
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker.service containerd.service
+  - usermod -aG docker wouter
