@@ -133,9 +133,9 @@
       <button type="button" data-pick="upload">{{template "ico-upload"}} Upload file</button>
     </div>
     <div class="thumbs" data-thumbs></div>
+    <input type="file" name="files" accept="image/*,application/pdf" multiple hidden data-files>
+    <input type="file" accept="image/*" capture="environment" hidden data-camera>
   </div>
-  <input type="file" name="files" accept="image/*,application/pdf" multiple hidden data-files>
-  <input type="file" accept="image/*" capture="environment" hidden data-camera>
 </div>
 {{end}}
 
