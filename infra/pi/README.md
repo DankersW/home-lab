@@ -13,12 +13,14 @@ automatically — you deploy it yourself after first boot (see below).
 | `user-data`      | cloud-config: user, SSH key, packages, Docker install    |
 | `network-config` | netplan v2: static `192.168.1.10/24`, gw `192.168.1.1`   |
 | `meta-data`      | NoCloud seed: instance-id + hostname                     |
-| `flash.sh`       | download, verify, write the image, copy the seed files   |
+| `flash.sh`         | download, verify, write the image, copy the seed files       |
+| `setup-storage.sh` | wipe + mount an external SSD; move Docker + deploy dir to it |
+| `setup-runner.sh`  | install + register the GitHub Actions self-hosted runner     |
 
 ## Host prerequisites
 
 The flashing machine (Linux) needs `xz-utils` (`xz`), `curl`, and the standard
-disk tools from `util-linux` (`lsblk`, `findmnt`, `blockdev`), `parted`
+disk tools from `util-linux` (`lsblk`, `findmnt`), `parted`
 (`partprobe`) and `udev` (`udevadm`) — plus `sudo` for `dd` and mounting.
 
 ```sh
@@ -84,6 +86,45 @@ make up                        # docker compose up -d --build
 ```
 
 Useful afterwards: `make logs`, `make stop`, `make backup`.
+
+## External SSD storage (recommended)
+
+Keep the heavy, long-lived data (Docker images + build cache, MinIO objects, the
+receipts DB) on an external SSD instead of the SD card — faster and far less card
+wear. With the SSD plugged into the Pi:
+
+```sh
+./infra/pi/setup-storage.sh /dev/sda    # find it first with lsblk; type the path to confirm
+```
+
+It wipes the SSD, formats one ext4 partition, mounts it at `/mnt/ssd` (fstab by
+UUID, `nofail` so a missing disk never blocks boot), moves Docker's data-root to
+`/mnt/ssd/docker`, and symlinks `~/home-lab -> /mnt/ssd/home-lab` so deploys land
+on the SSD automatically. Verify: `docker info | grep "Docker Root Dir"`.
+
+## Continuous deploy (push to main → self-hosted runner)
+
+A push to `main` auto-deploys via a self-hosted GitHub Actions runner on the Pi
+(`.github/workflows/deploy.yml` → `infra/scripts/deploy.sh`). The runner polls
+GitHub outbound — no port-forwarding, no SSH key in CI, and only `push` to `main`
+(never PRs) runs code on the Pi.
+
+One-time, on the Pi:
+
+```sh
+sudo apt update && sudo apt install -y git
+git clone https://github.com/DankersW/home-lab /tmp/home-lab    # temp, just for the scripts
+/tmp/home-lab/infra/pi/setup-storage.sh /dev/sda                # optional: SSD storage (above)
+/tmp/home-lab/infra/pi/setup-runner.sh <REGISTRATION_TOKEN>     # token: repo -> Settings -> Actions -> Runners -> New
+git clone https://github.com/DankersW/home-lab ~/home-lab       # lands on the SSD via the symlink
+cd ~/home-lab && make bootstrap                                 # generates secrets
+# write your real Cloudflare Tunnel token into infra/secrets/cloudflared_token
+rm -rf /tmp/home-lab
+```
+
+Thereafter every push to `main` rebuilds and redeploys. `deploy.sh` syncs
+`~/home-lab` to the pushed commit (gitignored `secrets/` + `data/` survive),
+checks the secrets exist, then `docker compose up -d --build --remove-orphans`.
 
 ## Troubleshooting
 
