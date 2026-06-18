@@ -2,7 +2,7 @@ services:
 
   receipts:
     build:
-      context: ./services/receipts
+      context: ./containers/receipts
     image: homelab/receipts:latest
     container_name: homelab_receipts
     restart: unless-stopped
@@ -10,7 +10,7 @@ services:
     depends_on:
       - minio
     volumes:
-      - ./services/receipts/data:/data
+      - ./containers/receipts/data:/data
     secrets:
       - minio_access_key
       - minio_secret_key
@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     volumes:
-      - ./minio/data:/data
+      - ./containers/minio/data:/data
     secrets:
       - minio_access_key
       - minio_secret_key
@@ -49,7 +49,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./homer/assets:/www/assets
+      - ./containers/homer/assets:/www/assets
     networks:
       - homelab
     environment:
@@ -62,8 +62,8 @@ services:
     command:
       - "--configFile=/etc/traefik/traefik.yml"
     volumes:
-      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./containers/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./containers/traefik/dynamic:/etc/traefik/dynamic:ro
     networks:
       - homelab
     restart: unless-stopped
@@ -88,8 +88,8 @@ networks:
 
 secrets:
   cloudflared_token:
-    file: ./secrets/cloudflared_token
+    file: ./infra/secrets/cloudflared_token
   minio_access_key:
-    file: ./secrets/minio_access_key
+    file: ./infra/secrets/minio_access_key
   minio_secret_key:
-    file: ./secrets/minio_secret_key
+    file: ./infra/secrets/minio_secret_key

@@ -8,7 +8,7 @@ Auth is handled by cloudflare SSO Access
 
 The server runs on a Raspberry Pi 4 (headless Ubuntu Server 24.04). To flash a
 card that boots fully configured — static IP, key-only SSH, Docker installed —
-see [`pi/`](pi/README.md):
+see [`infra/pi/`](infra/pi/README.md):
 
 ```sh
 make flash DEVICE=/dev/sdX

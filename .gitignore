@@ -1,9 +1,9 @@
 .env
-secrets/
+infra/secrets/
 env/
 
-services/receipts/data/
-minio/data/
+containers/receipts/data/
+containers/minio/data/
 backups/
 docker-compose.override.yml
 
