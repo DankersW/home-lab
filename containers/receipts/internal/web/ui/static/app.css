@@ -117,6 +117,13 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
 .btn-primary{background:var(--accent);color:var(--accentText)}
 .btn-primary:hover{background:var(--accent-press)}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.bidle{display:inline-flex;align-items:center;gap:8px}
+.bbusy{display:none}
+.btn.htmx-request{opacity:1;cursor:wait}
+.btn.htmx-request .bidle{display:none}
+.btn.htmx-request .bbusy{display:inline-flex;align-items:center;gap:8px}
+.spin{width:16px;height:16px;flex:none;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .btn-ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
 .btn-ghost:hover{background:var(--accent-soft)}
 .btn-soft{background:var(--surface2);color:var(--text)}

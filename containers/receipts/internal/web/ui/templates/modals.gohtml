@@ -19,7 +19,8 @@
       <button class="btn btn-primary" type="submit" form="modal-fields-{{.ID}}" data-save>{{template "ico-check"}} Save changes</button>
     </div>
     {{end}}{{else}}
-    <form id="modal-add" hx-post="/receipts" hx-encoding="multipart/form-data" hx-swap="none">
+    <form id="modal-add" hx-post="/receipts" hx-encoding="multipart/form-data" hx-swap="none"
+          hx-indicator="#d-save" hx-disabled-elt="#d-save">
       <input type="hidden" name="origin" value="desktop">
       <div class="mbody">
         {{template "capture_add" .}}
@@ -27,7 +28,7 @@
       </div>
       <div class="footer split">
         <button class="btn btn-soft" type="button" data-closemodal>Cancel</button>
-        <button class="btn btn-primary" type="submit" data-save disabled>{{template "ico-check"}} Save receipt</button>
+        <button id="d-save" class="btn btn-primary" type="submit" data-save disabled>{{template "save_label" "Save receipt"}}</button>
       </div>
     </form>
     {{end}}

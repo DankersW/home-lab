@@ -22,4 +22,8 @@
 
 {{define "toast"}}<div class="toast{{if .}} show{{end}}" data-toast role="status">{{template "ico-check"}} <span>{{.}}</span></div>{{end}}
 
+{{/* Primary submit label that swaps to a spinner while htmx has the request in
+     flight (the button carries the htmx-request class via hx-indicator). */}}
+{{define "save_label"}}<span class="bidle">{{template "ico-check"}} {{.}}</span><span class="bbusy"><span class="spin"></span> Saving…</span>{{end}}
+
 {{define "flash_error"}}<div id="flash" hx-swap-oob="true"><div class="flash-error" role="alert"><span>{{.}}</span><button type="button" class="flash-x" data-flashclose aria-label="Dismiss">{{template "ico-x"}}</button></div></div>{{end}}

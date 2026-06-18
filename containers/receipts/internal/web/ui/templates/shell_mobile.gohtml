@@ -18,7 +18,8 @@
     <div><h1>New receipt</h1><p class="sub">Add it now, find it later</p></div>
   </div>
   <div class="body">
-    <form id="m-add-form" hx-post="/receipts" hx-encoding="multipart/form-data" hx-swap="none">
+    <form id="m-add-form" hx-post="/receipts" hx-encoding="multipart/form-data" hx-swap="none"
+          hx-indicator="#m-save" hx-disabled-elt="#m-save">
       <input type="hidden" name="origin" value="mobile">
       {{template "capture_add" .}}
       {{template "form_fields" dict}}
@@ -26,7 +27,7 @@
   </div>
   <div class="footer split">
     <a class="btn btn-ghost" href="/list">{{template "ico-search"}} Find a receipt</a>
-    <button class="btn btn-primary" type="submit" form="m-add-form" data-save disabled>{{template "ico-check"}} Save</button>
+    <button id="m-save" class="btn btn-primary" type="submit" form="m-add-form" data-save disabled>{{template "save_label" "Save"}}</button>
   </div>
 </div>
 {{end}}
