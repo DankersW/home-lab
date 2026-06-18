@@ -27,7 +27,7 @@ services:
       REQUIRE_AUTH: "true"
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: homelab_minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -43,7 +43,7 @@ services:
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_secret_key
 
   homer:
-    image: b4bz/homer
+    image: b4bz/homer:v26.4.2
     container_name: homer_dashboard
     restart: unless-stopped
     ports:
@@ -57,7 +57,7 @@ services:
       - GID=1000
 
   traefik:
-    image: traefik:v2.11
+    image: traefik:v3.7.5
     container_name: homelab_traefik
     command:
       - "--configFile=/etc/traefik/traefik.yml"
@@ -69,7 +69,7 @@ services:
     restart: unless-stopped
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.6.0
     container_name: homelab_cloudflared
     command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflared_token
     secrets:

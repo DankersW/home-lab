@@ -44,7 +44,7 @@ die() {
 require_tools() {
   local missing=()
   local tool
-  for tool in curl xz dd sha256sum lsblk partprobe udevadm findmnt blockdev mount umount; do
+  for tool in curl xz dd sha256sum lsblk partprobe udevadm findmnt mount umount; do
     command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
   done
   [ "${#missing[@]}" -eq 0 ] || die "missing required tools: ${missing[*]}"
@@ -96,8 +96,11 @@ validate_device() {
   root_disk="$(resolve_root_disk)"
   [ "$device" != "$root_disk" ] || die "$device is the running system disk"
 
+  # Read size from sysfs via lsblk (no privilege needed); blockdev would
+  # require opening the raw device, which fails for non-root users.
   local size
-  size="$(blockdev --getsize64 "$device")"
+  size="$(lsblk --bytes -dno SIZE "$device")"
+  [ -n "$size" ] || die "could not determine size of $device"
   [ "$size" -le "$MAX_DEVICE_BYTES" ] || die "$device is larger than 256GB; refusing as likely not an SD card"
 
   local removable hotplug

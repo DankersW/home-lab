@@ -2,6 +2,10 @@
 infra/secrets/
 env/
 
+# Pi image artifacts downloaded by infra/pi/flash.sh
+infra/pi/*.img.xz
+infra/pi/SHA256SUMS
+
 containers/receipts/data/
 containers/minio/data/
 backups/
