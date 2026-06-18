@@ -7,7 +7,6 @@ FROM golang:1.25-alpine AS build
 
 WORKDIR /src
 
-# Cache module downloads first.
 COPY go.mod go.sum ./
 RUN go mod download
 
@@ -31,6 +30,4 @@ COPY --from=build /out/backup   /usr/local/bin/backup
 VOLUME ["/data"]
 
 EXPOSE 8080
-# Default command runs the server; the backup binary is selected by overriding
-# the command (docker compose run ... receipts /usr/local/bin/backup).
 CMD ["/usr/local/bin/receipts"]
