@@ -12,8 +12,9 @@ bootstrap:
 .PHONY: init-secrets
 init-secrets:
 	@echo "--- Generating secrets (if needed) ---"
-	@if [ ! -f "infra/secrets/cloudflared_token" ]; then \
-		touch -p infra/secrets/cloudflared_token; \
+	@if [ ! -f "infra/secrets/cloudflared_credentials" ]; then \
+		touch infra/secrets/cloudflared_credentials; \
+		echo "NOTE: add your tunnel credentials to infra/secrets/cloudflared_credentials (see 'One-time setup' in README.md)"; \
 	fi
 	@if [ ! -f "infra/secrets/minio_access_key" ]; then \
 		openssl rand -hex 16 | tr -d '\n' > infra/secrets/minio_access_key; \

@@ -81,7 +81,7 @@ cloud-init installs Docker but deploys nothing. To bring up the home-lab stack:
 git clone <this-repo-url> ~/home-lab
 cd ~/home-lab
 make bootstrap                 # creates dirs + generates secrets
-# put your Cloudflare Tunnel token in infra/secrets/cloudflared_token
+# add the tunnel credentials to infra/secrets/cloudflared_credentials (see ../../README.md -> One-time setup)
 make up                        # docker compose up -d --build
 ```
 
@@ -118,7 +118,7 @@ git clone https://github.com/DankersW/home-lab /tmp/home-lab    # temp, just for
 /tmp/home-lab/infra/pi/setup-runner.sh <REGISTRATION_TOKEN>     # token: repo -> Settings -> Actions -> Runners -> New
 git clone https://github.com/DankersW/home-lab ~/home-lab       # lands on the SSD via the symlink
 cd ~/home-lab && make bootstrap                                 # generates secrets
-# write your real Cloudflare Tunnel token into infra/secrets/cloudflared_token
+# add the tunnel credentials to infra/secrets/cloudflared_credentials (see ../../README.md -> One-time setup)
 rm -rf /tmp/home-lab
 ```
 
