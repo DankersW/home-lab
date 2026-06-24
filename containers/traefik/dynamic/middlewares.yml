@@ -11,3 +11,13 @@ http:
           X-Content-Type-Options: "nosniff"
           X-Frame-Options: "SAMEORIGIN"
           Referrer-Policy: "strict-origin-when-cross-origin"
+
+    dozzle-headers:
+      headers:
+        customRequestHeaders:
+          # TLS terminates at Cloudflare; tell the backend the original scheme.
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Content-Type-Options: "nosniff"
+          X-Frame-Options: "SAMEORIGIN"
+          Referrer-Policy: "strict-origin-when-cross-origin"

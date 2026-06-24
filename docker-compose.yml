@@ -56,6 +56,21 @@ services:
       - UID=1000
       - GID=1000
 
+  dozzle:
+    image: amir20/dozzle:v10.6.6
+    container_name: homelab_dozzle
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - homelab
+    environment:
+      DOZZLE_NO_ANALYTICS: "true"
+      DOZZLE_AUTH_PROVIDER: forward-proxy
+      DOZZLE_AUTH_HEADER_USER: Cf-Access-Authenticated-User-Email
+      DOZZLE_AUTH_HEADER_EMAIL: Cf-Access-Authenticated-User-Email
+      DOZZLE_AUTH_HEADER_NAME: Cf-Access-Authenticated-User-Email
+
   traefik:
     image: traefik:v3.7.5
     container_name: homelab_traefik

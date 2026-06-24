@@ -10,3 +10,8 @@ http:
         servers:
           - url: "http://receipts:8080"
         passHostHeader: true
+
+    dozzle:
+      loadBalancer:
+        servers:
+          - url: "http://dozzle:8080"

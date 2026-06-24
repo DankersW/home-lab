@@ -1,9 +1,15 @@
 # TODO
 
+## Containers
+
 * media with jellyfin and torrents
-* setting up extrernal ssd for media storage
 * splitwise alternative
 * keeping a TODO/list app --> maybe Vikunja
 * meal prep app -->  maybe Mealie or Tandoor
+* Adguard
+* bitwarden
 
-* receipts: new UI, take picture and upload, mobile friendly
+## Receipts
+
+* Auto analyize uploaded pdfs and pull data from it
+* When taking a picture from a receipt, pull the receipt out as a pdf without the background, like geniusScan like

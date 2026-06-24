@@ -13,3 +13,11 @@ http:
         - web
       middlewares:
         - receipts-headers
+
+    dozzle:
+      rule: "Host(`status.dankers.io`)"
+      service: dozzle
+      entryPoints:
+        - web
+      middlewares:
+        - dozzle-headers

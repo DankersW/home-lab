@@ -16,4 +16,11 @@ services:
     items:
       - name: "jellyfin"
       - name: "rsfeed"
+  - name: "Infrastructure"
+    icon: "fas fa-server"
+    items:
+      - name: "Status"
+        subtitle: "Container statuses & logs"
+        tag: "Monitoring"
+        url: "https://status.dankers.io"
 
