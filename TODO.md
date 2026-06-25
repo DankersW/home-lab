@@ -6,7 +6,6 @@
 * splitwise alternative
 * keeping a TODO/list app --> maybe Vikunja
 * meal prep app -->  maybe Mealie or Tandoor
-* Adguard
 * bitwarden
 
 ## Receipts

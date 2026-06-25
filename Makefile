@@ -6,6 +6,7 @@ bootstrap:
 	mkdir -p containers/receipts/data
 	mkdir -p containers/receipts/data/tmp
 	mkdir -p containers/minio/data
+	mkdir -p containers/adguardhome/work
 	mkdir -p containers/homer/assets
 	$(MAKE) -s init-secrets
 

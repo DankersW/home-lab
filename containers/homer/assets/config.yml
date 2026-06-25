@@ -23,4 +23,8 @@ services:
         subtitle: "Container statuses & logs"
         tag: "Monitoring"
         url: "https://status.dankers.io"
+      - name: "AdGuard"
+        subtitle: "Network ad-blocking DNS"
+        tag: "DNS"
+        url: "https://adguard.dankers.io"
 

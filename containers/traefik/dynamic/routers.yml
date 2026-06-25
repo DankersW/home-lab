@@ -21,3 +21,11 @@ http:
         - web
       middlewares:
         - dozzle-headers
+
+    adguard:
+      rule: "Host(`adguard.dankers.io`)"
+      service: adguard
+      entryPoints:
+        - web
+      middlewares:
+        - adguard-headers
