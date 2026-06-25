@@ -8,10 +8,5 @@ ingress:
     service: http://traefik:80
   - hostname: status.dankers.io
     service: http://traefik:80
-  # Wildcard smoke test: a name with no explicit DNS record, answered by the
-  # tunnel itself (no Traefik, no backend). 200 here proves * → tunnel works.
-  # Remove once verified.
-  - hostname: ping.dankers.io
-    service: http_status:200
   # Required catch-all: undeclared hostnames get a 404 at the edge.
   - service: http_status:404
