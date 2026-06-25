@@ -42,6 +42,21 @@ services:
       MINIO_ROOT_USER_FILE: /run/secrets/minio_access_key
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_secret_key
 
+  adguardhome:
+    image: adguard/adguardhome:v0.107.77
+    container_name: homelab_adguardhome
+    restart: unless-stopped
+    ports:
+      # Bind DNS to the LAN IP only; systemd-resolved keeps 127.0.0.53:53, so the
+      # two never collide and the host needs no changes.
+      - "192.168.1.10:53:53/tcp"
+      - "192.168.1.10:53:53/udp"
+    volumes:
+      - ./containers/adguardhome/work:/opt/adguardhome/work
+      - ./containers/adguardhome/conf:/opt/adguardhome/conf
+    networks:
+      - homelab
+
   homer:
     image: b4bz/homer:v26.4.2
     container_name: homer_dashboard

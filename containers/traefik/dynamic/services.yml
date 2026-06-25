@@ -15,3 +15,8 @@ http:
       loadBalancer:
         servers:
           - url: "http://dozzle:8080"
+
+    adguard:
+      loadBalancer:
+        servers:
+          - url: "http://adguardhome:3000"

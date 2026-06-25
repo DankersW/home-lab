@@ -8,5 +8,7 @@ ingress:
     service: http://traefik:80
   - hostname: status.dankers.io
     service: http://traefik:80
+  - hostname: adguard.dankers.io
+    service: http://traefik:80
   # Required catch-all: undeclared hostnames get a 404 at the edge.
   - service: http_status:404

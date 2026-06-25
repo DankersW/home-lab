@@ -8,6 +8,7 @@ infra/pi/SHA256SUMS
 
 containers/receipts/data/
 containers/minio/data/
+containers/adguardhome/work/
 backups/
 docker-compose.override.yml
 
