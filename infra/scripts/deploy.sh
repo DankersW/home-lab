@@ -8,7 +8,7 @@ set -euo pipefail
 
 readonly REPO_URL="https://github.com/DankersW/home-lab"
 readonly DEPLOY_DIR="${DEPLOY_DIR:-$HOME/home-lab}"
-readonly REQUIRED_SECRETS=(cloudflared_token minio_access_key minio_secret_key)
+readonly REQUIRED_SECRETS=(cloudflared_credentials minio_access_key minio_secret_key)
 
 die() { echo "error: $*" >&2; exit 1; }
 
@@ -32,7 +32,7 @@ check_secrets() {
   [ "${#missing[@]}" -eq 0 ] || die "missing secrets in $DEPLOY_DIR/infra/secrets: ${missing[*]}
 Run once on the Pi:
   cd $DEPLOY_DIR && make bootstrap
-  # then write your real Cloudflare Tunnel token into infra/secrets/cloudflared_token"
+  # then add your tunnel credentials to infra/secrets/cloudflared_credentials (see README.md)"
 }
 
 deploy() {

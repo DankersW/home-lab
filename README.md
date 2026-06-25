@@ -2,7 +2,17 @@
 
 Self hosting open source alternative to expensive subscriptions
 
-Auth is handled by cloudflare SSO Access
+```sh
+ssh wouter@homelab.local
+```
+
+## Networking & access
+
+Public traffic enters through a single Cloudflare Tunnel (`cloudflared`) and is
+forwarded to Traefik, which routes by hostname. The tunnel is **locally
+managed**: every route lives in
+[`containers/cloudflared/config.yml`](containers/cloudflared/config.yml) and is
+applied on startup.
 
 ## Provisioning the Pi
 
@@ -13,5 +23,3 @@ see [`infra/pi/`](infra/pi/README.md):
 ```sh
 make flash DEVICE=/dev/sdX
 ```
-
-Then `ssh wouter@homelab.local` and `make up` to bring the stack online.

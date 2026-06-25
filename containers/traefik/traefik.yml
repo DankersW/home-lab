@@ -7,7 +7,10 @@ providers:
     directory: "/etc/traefik/dynamic"
     watch: true
 
-accessLog: {}
+accessLog:
+  filters:
+    statusCodes:
+      - "400-599"
 
 log:
-  level: DEBUG
+  level: INFO

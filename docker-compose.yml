@@ -86,9 +86,11 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:2026.6.0
     container_name: homelab_cloudflared
-    command: tunnel --no-autoupdate run --token-file /run/secrets/cloudflared_token
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./containers/cloudflared/config.yml:/etc/cloudflared/config.yml:ro
     secrets:
-      - cloudflared_token
+      - cloudflared_credentials
     networks:
       - homelab
     restart: unless-stopped
@@ -102,8 +104,8 @@ networks:
 
 
 secrets:
-  cloudflared_token:
-    file: ./infra/secrets/cloudflared_token
+  cloudflared_credentials:
+    file: ./infra/secrets/cloudflared_credentials
   minio_access_key:
     file: ./infra/secrets/minio_access_key
   minio_secret_key:
