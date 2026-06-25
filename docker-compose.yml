@@ -65,6 +65,7 @@ services:
       - "8080:8080"
     volumes:
       - ./containers/homer/assets:/www/assets
+      - ./containers/homer/sw.js:/www/sw.js:ro
     networks:
       - homelab
     environment:
