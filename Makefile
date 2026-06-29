@@ -1,4 +1,5 @@
 BACKUP_DIR ?= $(CURDIR)/backups
+DEV_COMPOSE := docker compose --project-directory $(CURDIR) -f dev/compose-dev.yml
 
 .PHONY: bootstrap
 bootstrap:
@@ -28,13 +29,13 @@ init-secrets:
 
 .PHONY: up
 up:
-	docker compose up -d --build
+	$(DEV_COMPOSE) up --build
 
 stop:
-	docker compose down
+	$(DEV_COMPOSE) down
 
 logs:
-	docker compose logs -f
+	$(DEV_COMPOSE) logs -f
 
 
 .PHONY: backup
