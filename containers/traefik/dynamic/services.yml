@@ -20,3 +20,9 @@ http:
       loadBalancer:
         servers:
           - url: "http://adguardhome:3000"
+
+    audiobookshelf:
+      loadBalancer:
+        servers:
+          - url: "http://audiobookshelf:80"
+        passHostHeader: true

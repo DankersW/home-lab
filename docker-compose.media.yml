@@ -1,0 +1,144 @@
+# Audiobook stack: listen (Audiobookshelf) + acquire (Bookshelf → Prowlarr →
+# qBittorrent behind a VPN), with rreading-glasses serving book metadata.
+#
+# Joins the existing `homelab` network so the running Traefik instance can route
+# audiobooks.dankers.io to Audiobookshelf. Run alongside the root stack:
+#   docker compose -f docker-compose.yml -f docker-compose.media.yml up -d
+#
+# A single shared ./containers/media/data tree holds both downloads and the
+# final library, so imports are atomic hardlinks rather than slow copies
+# (the TRaSH-guides layout).
+#
+# Acquisition admin UIs (Bookshelf, Prowlarr, qBittorrent) are bound to the LAN
+# IP only and deliberately NOT exposed through Cloudflare. Only Audiobookshelf
+# — the thing you actually want to reach remotely — goes through Traefik.
+
+services:
+
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:2.19.0
+    container_name: homelab_audiobookshelf
+    restart: unless-stopped
+    user: "1000:1000"
+    volumes:
+      - ./containers/audiobookshelf/config:/config
+      - ./containers/audiobookshelf/metadata:/metadata
+      - ./containers/media/data/media/audiobooks:/audiobooks
+      - ./containers/media/data/media/podcasts:/podcasts
+    networks:
+      - homelab
+    environment:
+      TZ: Europe/Amsterdam
+
+  bookshelf:
+    image: ghcr.io/pennydreadful/bookshelf:softcover-v0.4.19.41
+    container_name: homelab_bookshelf
+    restart: unless-stopped
+    depends_on:
+      - rreading-glasses
+    volumes:
+      - ./containers/bookshelf/config:/config
+      - ./containers/media/data:/data
+    networks:
+      - homelab
+    ports:
+      - "192.168.1.10:8787:8787"   # LAN-only admin UI
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Amsterdam
+      # Point the fork's metadata lookups at the local rreading-glasses proxy.
+      METADATA_URL: http://rreading-glasses:8788
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:2.4.0.5397-ls151
+    container_name: homelab_prowlarr
+    restart: unless-stopped
+    volumes:
+      - ./containers/prowlarr/config:/config
+    networks:
+      - homelab
+    ports:
+      - "192.168.1.10:9696:9696"   # LAN-only admin UI
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Amsterdam
+
+  # VPN gateway. qBittorrent shares this container's network namespace, so all
+  # torrent traffic egresses through the tunnel and never the host's IP.
+  gluetun:
+    image: qmcgaw/gluetun:v3.41.1
+    container_name: homelab_gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    networks:
+      - homelab
+    ports:
+      - "192.168.1.10:8081:8081"   # qBittorrent web UI (served via this namespace)
+      - "6881:6881/tcp"            # torrent listen port
+      - "6881:6881/udp"
+    environment:
+      VPN_SERVICE_PROVIDER: ${VPN_SERVICE_PROVIDER}
+      VPN_TYPE: wireguard
+      WIREGUARD_PRIVATE_KEY: ${WIREGUARD_PRIVATE_KEY}
+      WIREGUARD_ADDRESSES: ${WIREGUARD_ADDRESSES}
+      SERVER_COUNTRIES: ${VPN_SERVER_COUNTRIES}
+      TZ: Europe/Amsterdam
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.2.2_v2.0.13-ls464
+    container_name: homelab_qbittorrent
+    restart: unless-stopped
+    network_mode: "service:gluetun"   # kill-switched: no VPN, no traffic
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    volumes:
+      - ./containers/qbittorrent/config:/config
+      - ./containers/media/data/torrents:/data/torrents
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Amsterdam
+      WEBUI_PORT: "8081"
+
+  rreading-glasses:
+    image: blampe/rreading-glasses:latest
+    container_name: homelab_rreading_glasses
+    restart: unless-stopped
+    depends_on:
+      rreading-glasses-db:
+        condition: service_started
+    entrypoint: ["/main", "serve"]
+    command:
+      - --upstream=www.goodreads.com
+    mem_limit: 256m
+    networks:
+      - homelab
+    environment:
+      POSTGRES_HOST: rreading-glasses-db
+      POSTGRES_DATABASE: rreading-glasses
+      POSTGRES_USER: rreading-glasses
+      POSTGRES_PASSWORD: ${RREADING_POSTGRES_PASSWORD}
+
+  rreading-glasses-db:
+    image: postgres:17
+    container_name: homelab_rreading_glasses_db
+    restart: unless-stopped
+    networks:
+      - homelab
+    environment:
+      POSTGRES_USER: rreading-glasses
+      POSTGRES_PASSWORD: ${RREADING_POSTGRES_PASSWORD}
+      POSTGRES_DB: rreading-glasses
+    volumes:
+      - ./containers/rreading-glasses/data:/var/lib/postgresql/data
+
+networks:
+  homelab:
+    external: true
+    name: home-lab_homelab

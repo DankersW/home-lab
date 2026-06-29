@@ -9,6 +9,12 @@ infra/pi/SHA256SUMS
 containers/receipts/data/
 containers/minio/data/
 containers/adguardhome/work/
+containers/audiobookshelf/
+containers/bookshelf/
+containers/prowlarr/
+containers/qbittorrent/
+containers/rreading-glasses/
+containers/media/
 backups/
 docker-compose.override.yml
 

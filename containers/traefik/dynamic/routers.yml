@@ -29,3 +29,11 @@ http:
         - web
       middlewares:
         - adguard-headers
+
+    audiobookshelf:
+      rule: "Host(`audiobooks.dankers.io`)"
+      service: audiobookshelf
+      entryPoints:
+        - web
+      middlewares:
+        - audiobookshelf-headers
