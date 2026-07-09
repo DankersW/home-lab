@@ -67,6 +67,14 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
 .cap .btns button:hover{border-color:var(--accent);background:#fff}
 .cap .btns .ico{width:16px;height:16px;color:var(--accent)}
 
+/* scan hero button (opens the document scanner) */
+.cap .btns-hero{margin-top:13px}
+.cap .btns .scanbtn{flex:1;border:0;background:var(--accent);color:#fff;border-radius:11px;padding:12px 8px;
+  font-family:var(--fb);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:background .15s}
+.cap .btns .scanbtn:hover{background:var(--accent-press)}
+.cap .btns .scanbtn .ico{width:17px;height:17px;color:#fff}
+
 /* attachment thumbnails */
 .thumbs{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px}
 .thumb{position:relative;width:66px;height:66px;border-radius:12px;overflow:hidden;border:1px solid var(--border2);
@@ -307,6 +315,45 @@ body{font-family:var(--fb);color:var(--text);background:#E9E7E2;
   .scene{display:none}
   .web{display:grid}
 }
+
+/* ---- document scanner overlay ---- */
+body.scanner-open{overflow:hidden}
+.scanner{position:fixed;inset:0;z-index:300;background:rgba(18,18,18,.94);color:#fff;
+  display:flex;flex-direction:column;overscroll-behavior:contain}
+.scanner-head{display:flex;align-items:center;gap:12px;padding:16px 18px calc(12px);
+  padding-top:calc(16px + env(safe-area-inset-top))}
+.scanner-title{font-family:var(--fh);font-weight:800;font-size:16px;letter-spacing:-.3px;flex:1}
+.scanner-close{width:36px;height:36px;border-radius:10px;border:0;background:rgba(255,255,255,.1);color:#fff;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.scanner-close:hover{background:rgba(255,255,255,.18)}
+.scanner-close .ico{width:18px;height:18px}
+.scanner-body{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:6px 16px;overflow:auto}
+.scanner-hint{margin:0;font-size:13px;color:rgba(255,255,255,.72);text-align:center}
+.scanner-stage{position:relative;flex:none;touch-action:none}
+.scanner-canvas{display:block;border-radius:10px}
+.scanner-quad{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.scanner-quad polygon{fill:rgba(234,88,12,.16);stroke:var(--accent);stroke-width:2;vector-effect:non-scaling-stroke}
+.scanner-handle{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#fff;
+  border:3px solid var(--accent);box-shadow:0 1px 5px rgba(0,0,0,.5);touch-action:none;cursor:grab}
+.scanner-handle:active{cursor:grabbing;transform:scale(1.08)}
+.scanner-preview{display:block;border-radius:10px;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.scanner-filters{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+.scanner-chip{border:1.5px solid rgba(255,255,255,.28);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;
+  padding:9px 17px;font-family:var(--fb);font-weight:700;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s}
+.scanner-chip:hover{border-color:rgba(255,255,255,.5)}
+.scanner-chip.on{background:var(--accent);border-color:var(--accent)}
+.scanner-status{display:flex;flex-direction:column;align-items:center;text-align:center;color:rgba(255,255,255,.85);padding:40px 20px}
+.scanner-status p{margin:0;font-size:14px;line-height:1.5}
+.scanner-status small{color:rgba(255,255,255,.55);font-size:12px}
+.scanner-err{color:#FF9A8B}
+.scanner-spin{display:inline-block;width:28px;height:28px;border-radius:50%;border:3px solid rgba(255,255,255,.22);
+  border-top-color:#fff;animation:spin .7s linear infinite;margin-bottom:14px}
+.scanner-foot{display:flex;gap:11px;padding:14px 18px;padding-bottom:calc(16px + env(safe-area-inset-bottom));
+  border-top:1px solid rgba(255,255,255,.1)}
+.scanner-foot .btn{flex:1}
+.scanner .btn.ghost-d{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.35)}
+.scanner .btn.ghost-d:hover{background:rgba(255,255,255,.08)}
 
 /* ---- validation flash (server-side errors) ---- */
 #flash:empty{display:none}

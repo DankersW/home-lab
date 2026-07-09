@@ -128,6 +128,9 @@
     {{template "ico-camera-lg"}}
     <b data-capprompt>Snap a photo or add a PDF</b>
     <span>Receipt, warranty card, manual…</span>
+    <div class="btns btns-hero">
+      <button type="button" class="scanbtn" data-scan>{{template "ico-scan"}} Scan document</button>
+    </div>
     <div class="btns">
       <button type="button" data-pick="camera">{{template "ico-camera"}} Take photo</button>
       <button type="button" data-pick="upload">{{template "ico-upload"}} Upload file</button>
@@ -135,19 +138,26 @@
     <div class="thumbs" data-thumbs></div>
     <input type="file" name="files" accept="image/*,application/pdf" multiple hidden data-files>
     <input type="file" accept="image/*" capture="environment" hidden data-camera>
+    <input type="file" accept="image/*" capture="environment" hidden data-scan-input>
   </div>
 </div>
 {{end}}
 
 {{/* ---- Capture zone: EDIT mode uploads immediately and removes server-side ---- */}}
 {{define "capture_edit"}}
-<div class="capwrap">
+<div class="capwrap" data-capture-edit-wrap>
+  {{/* hx-trigger is a bare "change": it bubbles from this form's own file inputs
+       but not from the out-of-form [data-scan-input] below. A "from:input[type=file]"
+       selector would bind document-wide in htmx and fire on the scan input too. */}}
   <form class="cap" data-capture-edit hx-post="/receipts/{{.ID}}/attachments" hx-encoding="multipart/form-data"
-        hx-target="#edit-thumbs-{{.ID}}" hx-swap="outerHTML" hx-trigger="change from:input[type=file]"
+        hx-target="#edit-thumbs-{{.ID}}" hx-swap="outerHTML" hx-trigger="change"
         hx-on::after-request="this.querySelectorAll('input[type=file]').forEach(function(i){i.value=''})">
     {{template "ico-camera-lg"}}
     <b>Add another file</b>
     <span>Receipt, warranty card, manual…</span>
+    <div class="btns btns-hero">
+      <button type="button" class="scanbtn" data-scan>{{template "ico-scan"}} Scan document</button>
+    </div>
     <div class="btns">
       <button type="button" data-pick-edit="camera">{{template "ico-camera"}} Take photo</button>
       <button type="button" data-pick-edit="upload">{{template "ico-upload"}} Upload file</button>
@@ -156,6 +166,9 @@
     <input type="file" name="files" accept="image/*" capture="environment" hidden data-edit-camera>
     {{template "edit_thumbs" .}}
   </form>
+  {{/* Kept outside the form so picking a photo to scan never triggers the
+       immediate-upload trigger; the finished PDF is delivered via data-edit-upload. */}}
+  <input type="file" accept="image/*" capture="environment" hidden data-scan-input>
 </div>
 {{end}}
 
