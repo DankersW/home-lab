@@ -99,7 +99,7 @@ services:
     restart: unless-stopped
 
   cloudflared:
-    image: cloudflare/cloudflared:2026.6.0
+    image: cloudflare/cloudflared:2026.10.4
     container_name: homelab_cloudflared
     command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
     volumes:
